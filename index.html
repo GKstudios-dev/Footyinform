@@ -8,16 +8,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  /* (Same styles as before - kept for brevity in this response. Full styles are included in the actual file) */
+  /* ============ DESIGN TOKENS ============ */
   :root{
-    --pitch-dark:#0E2A1B;
-    --pitch:#163B26;
-    --pitch-light:#1F4F32;
-    --chalk:#F4F2E9;
-    --chalk-dim:#C9D3C6;
-    --ink:#0F2016;
+    --pitch-dark:#0E2A1B;      /* deep pitch green — page background */
+    --pitch:#163B26;           /* panel green */
+    --pitch-light:#1F4F32;     /* hover/border green */
+    --chalk:#F4F2E9;           /* chalk-line off white — primary text on dark */
+    --chalk-dim:#C9D3C6;       /* secondary text on dark */
+    --ink:#0F2016;             /* text on light surfaces */
     --ink-dim:#4B5D51;
-    --floodlight:#FFB627;
+    --floodlight:#FFB627;      /* amber accent — floodlight glow */
     --floodlight-dim:#8A6420;
     --line:rgba(244,242,233,0.12);
     --card-bg:#F4F2E9;
@@ -29,63 +29,1294 @@
     --body:'Inter',sans-serif;
     --mono:'Space Mono',monospace;
   }
-  /* ... rest of CSS ... */
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--pitch-dark);
+    color:var(--chalk);
+    font-family:var(--body);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4,.display{font-family:var(--display);text-transform:uppercase;letter-spacing:.02em;}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+  ::selection{background:var(--floodlight);color:var(--ink);}
+
+  /* ============ TOP BAR ============ */
+  .topbar{
+    position:sticky;top:0;z-index:40;
+    display:flex;align-items:center;gap:14px;
+    padding:14px 20px;
+    background:var(--pitch-dark);
+    border-bottom:1px solid var(--line);
+  }
+  .hamburger{
+    width:38px;height:34px;
+    background:transparent;border:1px solid var(--line);
+    border-radius:var(--radius);
+    display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;
+    transition:border-color .2s, background .2s;
+  }
+  .hamburger:hover{border-color:var(--floodlight);}
+  .hamburger span{width:18px;height:2px;background:var(--chalk);display:block;transition:transform .25s, opacity .2s;}
+  .hamburger.active span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+  .hamburger.active span:nth-child(2){opacity:0;}
+  .hamburger.active span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+  .brand{display:flex;align-items:baseline;gap:8px;flex:1;}
+  .brand .mark{
+    font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:.03em;color:var(--chalk);
+    text-transform:uppercase;
+  }
+  .brand .mark em{
+    font-style:normal;color:var(--floodlight);
+  }
+  .brand .tagline{
+    font-family:var(--mono);font-size:10px;color:var(--chalk-dim);letter-spacing:.08em;
+    display:none;
+  }
+  @media(min-width:640px){.brand .tagline{display:inline;}}
+
+  .write-btn{
+    border:1px solid var(--floodlight-dim);
+    color:var(--floodlight);
+    background:transparent;
+    padding:8px 14px;
+    font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    border-radius:var(--radius);
+    transition:background .2s,color .2s;
+  }
+  .write-btn:hover{background:var(--floodlight);color:var(--ink);}
+
+  /* ============ TICKER (signature element) ============ */
+  .ticker{
+    background:var(--pitch);
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+    white-space:nowrap;
+    position:relative;
+  }
+  .ticker::before{
+    content:'LIVE';
+    position:absolute;left:0;top:0;bottom:0;z-index:2;
+    display:flex;align-items:center;
+    padding:0 12px;
+    background:var(--bad);
+    font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--chalk);
+  }
+  .ticker-track{
+    display:inline-block;
+    padding-left:100%;
+    animation:scroll-ticker 32s linear infinite;
+    font-family:var(--mono);font-size:12px;color:var(--floodlight);
+    padding-top:7px;padding-bottom:7px;
+  }
+  .ticker-track span{margin-right:40px;color:var(--chalk-dim);}
+  .ticker-track span b{color:var(--floodlight);font-weight:700;}
+  @keyframes scroll-ticker{from{transform:translateX(0);}to{transform:translateX(-100%);}}
+  @media(prefers-reduced-motion:reduce){.ticker-track{animation:none;padding-left:64px;}}
+
+  /* ============ SIDEBAR ============ */
+  #overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.5);
+    z-index:45;opacity:0;pointer-events:none;transition:opacity .25s;
+  }
+  #overlay.show{opacity:1;pointer-events:auto;}
+
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;
+    width:280px;
+    background:var(--pitch);
+    border-right:1px solid var(--line);
+    transform:translateX(-100%);
+    transition:transform .28s ease;
+    z-index:50;
+    display:flex;flex-direction:column;
+    padding:20px 0;
+  }
+  .sidebar.open{transform:translateX(0);}
+  .sidebar-head{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:0 20px 18px;border-bottom:1px solid var(--line);margin-bottom:8px;
+  }
+  .sidebar-head .display{font-size:15px;color:var(--chalk-dim);}
+  .sidebar-close{background:none;border:none;color:var(--chalk-dim);font-size:20px;line-height:1;}
+  .sidebar-close:hover{color:var(--floodlight);}
+
+  .nav-section-label{
+    font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--chalk-dim);
+    padding:14px 20px 6px;text-transform:uppercase;
+  }
+  .nav-item{
+    display:flex;align-items:center;gap:12px;
+    padding:13px 20px;
+    border-left:3px solid transparent;
+    color:var(--chalk-dim);
+    font-family:var(--display);font-size:15px;letter-spacing:.02em;
+    transition:background .2s,color .2s,border-color .2s;
+  }
+  .nav-item:hover{background:var(--pitch-light);color:var(--chalk);}
+  .nav-item.active{
+    color:var(--chalk);background:var(--pitch-light);
+    border-left-color:var(--floodlight);
+  }
+  .nav-item .ico{width:18px;height:18px;flex:none;opacity:.85;}
+  .nav-item .count{
+    margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--floodlight);
+  }
+  .nav-item.disabled{opacity:.4;cursor:default;}
+  .nav-item.disabled:hover{background:transparent;color:var(--chalk-dim);}
+  .nav-more{
+    margin:14px 20px 0;padding:12px 14px;
+    border:1px dashed var(--line);border-radius:var(--radius);
+    font-family:var(--mono);font-size:10px;color:var(--chalk-dim);line-height:1.5;
+  }
+  .sidebar-write{
+    margin:auto 20px 4px;
+    padding:12px 14px;
+    border:1px solid var(--floodlight-dim);border-radius:var(--radius);
+    color:var(--floodlight);font-family:var(--mono);font-size:11px;text-align:center;
+    letter-spacing:.05em;text-transform:uppercase;
+  }
+  .sidebar-write:hover{background:var(--floodlight);color:var(--ink);}
+
+  /* ============ MAIN ============ */
+  main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
+
+  .view-tabs{
+    display:flex;gap:0;
+    border-bottom:1px solid var(--line);
+    margin-bottom:22px;
+  }
+  .view-tab{
+    background:none;border:none;
+    padding:10px 4px;margin-right:26px;
+    font-family:var(--display);font-size:16px;letter-spacing:.02em;
+    color:var(--chalk-dim);
+    border-bottom:2px solid transparent;
+    position:relative;top:1px;
+  }
+  .view-tab.active{color:var(--chalk);border-bottom-color:var(--floodlight);}
+  .filter-note{
+    font-family:var(--mono);font-size:11px;color:var(--chalk-dim);margin:-14px 0 20px;
+  }
+  .filter-note button{background:none;border:none;color:var(--floodlight);font-family:var(--mono);font-size:11px;text-decoration:underline;padding:0;}
+
+  /* ============ POST CARD ============ */
+  .card{
+    display:block;background:var(--card-bg);color:var(--ink);
+    border-radius:var(--radius);overflow:hidden;
+    margin-bottom:22px;
+    border:1px solid rgba(0,0,0,.06);
+    transition:transform .18s, box-shadow .18s;
+  }
+  .card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.35);}
+  .card-img{width:100%;height:190px;object-fit:cover;display:block;background:var(--pitch-light);}
+  .card-body{padding:16px 18px 18px;}
+  .card-meta{
+    display:flex;align-items:center;gap:10px;margin-bottom:8px;
+    font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  }
+  .tag{
+    padding:3px 8px;border-radius:2px;color:#fff;font-weight:700;
+  }
+  .tag.club{background:#1F4F32;}
+  .tag.national{background:#7A4A16;}
+  .tag.transfers{background:#7A2E1F;}
+  .card-meta .dot{color:var(--ink-dim);}
+  .card-meta .trending-flag{color:var(--bad);font-weight:700;}
+  .card h3{font-size:21px;margin:0 0 8px;line-height:1.18;}
+  .card p.snippet{margin:0;color:var(--ink-dim);font-size:14.5px;line-height:1.55;}
+  .read-more{display:inline-block;margin-top:10px;font-family:var(--mono);font-size:11px;color:#1F4F32;text-decoration:underline;}
+
+  .empty-state{
+    padding:50px 20px;text-align:center;color:var(--chalk-dim);
+    border:1px dashed var(--line);border-radius:var(--radius);
+    font-family:var(--mono);font-size:12px;
+  }
+
+  /* ============ ARTICLE VIEW ============ */
+  .back-btn{
+    display:inline-flex;align-items:center;gap:6px;
+    background:none;border:1px solid var(--line);color:var(--chalk-dim);
+    padding:7px 12px;font-family:var(--mono);font-size:11px;border-radius:var(--radius);
+    margin-bottom:20px;
+  }
+  .back-btn:hover{border-color:var(--floodlight);color:var(--floodlight);}
+  .article-hero{width:100%;height:260px;object-fit:cover;border-radius:var(--radius);margin-bottom:18px;}
+  .article-meta{font-family:var(--mono);font-size:11px;color:var(--chalk-dim);margin-bottom:8px;display:flex;gap:10px;align-items:center;}
+  .article h1{font-size:32px;line-height:1.1;margin:0 0 16px;}
+  .article-body{font-size:16px;line-height:1.75;color:var(--chalk);}
+  .article-body p{margin:0 0 18px;}
+  .article-body h2{font-family:var(--display);font-size:20px;margin:26px 0 12px;color:var(--floodlight);}
+
+  /* ============ WRITER / SEO PANEL ============ */
+  .writer h2.display{font-size:24px;margin-bottom:4px;}
+  .writer .sub{color:var(--chalk-dim);font-size:13px;margin-bottom:22px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--chalk-dim);margin-bottom:6px;}
+  .field input,.field textarea,.field select{
+    width:100%;background:var(--pitch);border:1px solid var(--line);color:var(--chalk);
+    padding:10px 12px;font-family:var(--body);font-size:14px;border-radius:var(--radius);
+  }
+  .field textarea{resize:vertical;min-height:70px;line-height:1.5;}
+  .field-row{display:flex;gap:14px;}
+  .field-row .field{flex:1;}
+  .char-count{font-family:var(--mono);font-size:10px;color:var(--chalk-dim);margin-top:4px;text-align:right;}
+
+  .seo-panel{
+    background:var(--pitch);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;margin:22px 0;
+  }
+  .seo-score-row{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+  .seo-score-circle{
+    width:52px;height:52px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-weight:700;font-size:16px;
+    border:3px solid var(--line);flex:none;
+  }
+  .seo-score-label{font-family:var(--display);font-size:15px;letter-spacing:.02em;}
+  .seo-score-label span{display:block;font-family:var(--mono);font-size:10px;color:var(--chalk-dim);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+  .seo-checks{list-style:none;margin:0;padding:0;}
+  .seo-checks li{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:8px 0;border-top:1px solid var(--line);
+    font-size:13px;color:var(--chalk-dim);
+  }
+  .seo-checks li:first-child{border-top:none;}
+  .seo-dot{width:9px;height:9px;border-radius:50%;flex:none;margin-top:4px;}
+  .seo-checks li b{color:var(--chalk);}
+
+  .publish-btn{
+    background:var(--floodlight);color:var(--ink);border:none;
+    padding:12px 22px;font-family:var(--display);font-size:15px;letter-spacing:.03em;
+    border-radius:var(--radius);
+  }
+  .publish-btn:hover{background:#ffc95c;}
+  .publish-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .cancel-btn{
+    background:none;border:1px solid var(--line);color:var(--chalk-dim);
+    padding:12px 18px;font-family:var(--mono);font-size:12px;border-radius:var(--radius);margin-left:10px;
+  }
+
+  /* ============ FOOTER ============ */
+  footer{
+    border-top:1px solid var(--line);
+    padding:26px 20px 40px;
+    text-align:center;
+    font-family:var(--mono);font-size:11px;color:var(--chalk-dim);
+  }
+  footer a{color:var(--floodlight);}
+
+  /* ============ RESULTS TAB ============ */
+  .comp-pills{
+    display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:6px;
+  }
+  .comp-pill{
+    flex:none;background:var(--pitch);border:1px solid var(--line);color:var(--chalk-dim);
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;
+    padding:8px 13px;border-radius:20px;white-space:nowrap;
+  }
+  .comp-pill.active{background:var(--floodlight);color:var(--ink);border-color:var(--floodlight);font-weight:700;}
+  .comp-pill .live-count{background:var(--bad);color:#fff;border-radius:8px;padding:1px 6px;font-size:9px;margin-left:6px;}
+
+  .results-subnav{display:flex;gap:18px;border-bottom:1px solid var(--line);margin-bottom:16px;}
+  .subtab{
+    background:none;border:none;color:var(--chalk-dim);
+    font-family:var(--display);font-size:14px;letter-spacing:.02em;
+    padding:8px 2px;border-bottom:2px solid transparent;position:relative;top:1px;
+  }
+  .subtab.active{color:var(--chalk);border-bottom-color:var(--floodlight);}
+
+  .match-day-label{
+    font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--chalk-dim);margin:18px 0 8px;
+  }
+  .match-day-label:first-child{margin-top:0;}
+  .match-row{
+    display:flex;align-items:center;gap:10px;
+    background:var(--card-bg);color:var(--ink);
+    border-radius:var(--radius);padding:10px 14px;margin-bottom:6px;
+    font-size:13.5px;
+  }
+  .match-row.is-live{border-left:3px solid var(--bad);}
+  .match-row .m-team{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .match-row .m-team.away{text-align:right;}
+  .match-row .m-score{
+    font-family:var(--mono);font-weight:700;min-width:54px;text-align:center;
+    color:var(--ink);background:#e8e5d9;border-radius:3px;padding:3px 0;
+  }
+  .match-row.is-live .m-score{background:var(--bad);color:#fff;}
+  .m-status{font-family:var(--mono);font-size:9px;color:var(--ink-dim);min-width:44px;text-align:center;}
+
+  .standings-table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card-bg);color:var(--ink);border-radius:var(--radius);overflow:hidden;}
+  .standings-table th{
+    font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;
+    text-align:left;padding:9px 8px;background:#e8e5d9;color:var(--ink-dim);
+  }
+  .standings-table td{padding:8px;border-top:1px solid rgba(0,0,0,.06);}
+  .standings-table td.num,.standings-table th.num{text-align:center;width:34px;}
+  .standings-table td.team{font-weight:600;}
+  .standings-table tr:nth-child(1) td.team{color:#1F4F32;}
+
+  .scoreboard-empty{
+    font-family:var(--mono);font-size:11px;color:var(--chalk-dim);
+    border:1px dashed var(--line);border-radius:var(--radius);padding:14px;
+  }
+
+  [hidden]{display:none !important;}
+
+  /* ============ MOBILE ============ */
+  @media(max-width:480px){
+    .topbar{padding:10px 12px;gap:10px;}
+    .brand .mark{font-size:17px;}
+    #modeBadge{display:none;} /* keep header uncluttered on small phones; still visible on tablet+ */
+    .write-btn{padding:7px 10px;font-size:10px;}
+    main{padding:18px 12px 50px;}
+    .card-img{height:150px;}
+    .card-body{padding:13px 14px 15px;}
+    .card h3{font-size:18px;}
+    .view-tab{font-size:14px;margin-right:18px;}
+    .article h1{font-size:24px;}
+    .article-hero{height:180px;}
+    .field-row{flex-direction:column;gap:0;}
+    .sidebar{width:82%;max-width:280px;}
+    .score-card{width:130px;padding:10px 10px 8px;}
+    .score-row{font-size:11.5px;}
+    .match-row{font-size:12px;padding:9px 10px;gap:6px;}
+    .m-status{min-width:34px;}
+    .standings-table{font-size:11.5px;}
+    .standings-table th,.standings-table td{padding:6px 5px;}
+  }
+  @media(min-width:481px) and (max-width:767px){
+    .card-img{height:170px;}
+  }
+
+  /* focus visibility */
+  a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
+    outline:2px solid var(--floodlight);outline-offset:2px;
+  }
 </style>
 </head>
 <body>
-<!-- (Full HTML structure with new tabs) -->
+
+<div id="overlay"></div>
 
 <header class="topbar">
-  <!-- ... -->
+  <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="brand">
+    <span class="mark" id="brandMark">Footy <em>Inform</em></span>
+    <span class="tagline">CLUB · NATIONAL TEAM · TRANSFERS</span>
+  </div>
+  <span id="modeBadge" style="font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--chalk-dim);border:1px solid var(--line);padding:5px 8px;border-radius:2px;text-transform:uppercase;"></span>
+  <button class="write-btn" id="openWriter">+ New Post</button>
 </header>
 
-<!-- TABS UPDATED -->
-<div class="view-tabs">
-  <button class="view-tab active" id="tabTrending">Trending</button>
-  <button class="view-tab" id="tabLatest">Latest</button>
-  <button class="view-tab" id="tabResults">Results</button>
+<div class="ticker">
+  <div class="ticker-track" id="tickerTrack"></div>
 </div>
 
-<!-- Feed for Trending/Latest -->
-<div id="feedView">
-  <div id="feed"></div>
-</div>
-
-<!-- New Results View -->
-<div id="resultsView" hidden>
-  <div class="scoreboard-wrap">
-    <div class="scoreboard-head">
-      <h2 class="display" style="font-family:var(--mono);text-transform:uppercase;">Latest Results</h2>
-      <select id="leaguePicker"></select>
-    </div>
-    <div class="scoreboard" id="scoreboard"></div>
+<nav class="sidebar" id="sidebar" aria-label="Categories">
+  <div class="sidebar-head">
+    <span class="display">Menu</span>
+    <button class="sidebar-close" id="sidebarClose" aria-label="Close menu">&times;</button>
   </div>
-</div>
 
-<!-- Rest of the HTML and script with sample posts included -->
+  <div class="nav-section-label">Categories</div>
+  <a href="#" class="nav-item" data-cat="all">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    All Stories
+  </a>
+  <a href="#" class="nav-item" data-cat="club">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+    Club Football News
+  </a>
+  <a href="#" class="nav-item" data-cat="national">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 3v18M5 4h13l-2.5 3L18 10H5"/></svg>
+    National Team News
+  </a>
+  <a href="#" class="nav-item" data-cat="transfers">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 7h10M7 7l3-3M7 7l3 3M17 17H7M17 17l-3-3M17 17l-3 3"/></svg>
+    Transfers &amp; Gossip
+  </a>
+
+  <div class="nav-section-label">Coming soon</div>
+  <span class="nav-item disabled">Tactics Board</span>
+  <span class="nav-item disabled">Fan Culture</span>
+  <div class="nav-more">Add more tabs any time — duplicate a nav-item in the HTML and give it a new data-cat, then add matching posts in the script.</div>
+
+  <button class="sidebar-write" id="sidebarWrite">+ Write a new post</button>
+</nav>
+
+<main id="main">
+
+  <!-- FEED VIEW -->
+  <section id="feedView">
+    <div class="view-tabs">
+      <button class="view-tab active" id="tabTrending">Trending</button>
+      <button class="view-tab" id="tabLatest">Latest</button>
+      <button class="view-tab" id="tabResults">Results</button>
+    </div>
+
+    <!-- Posts feed (Trending / Latest) -->
+    <div id="postsPane">
+      <div class="filter-note" id="filterNote" hidden></div>
+      <div id="feed"></div>
+    </div>
+
+    <!-- Results pane (competitions: fixtures, tables, live) -->
+    <div id="resultsPane" hidden>
+      <div class="comp-pills" id="compPills"></div>
+      <div class="results-subnav" id="resultsSubnav">
+        <button class="subtab active" data-sub="fixtures">Fixtures</button>
+        <button class="subtab" data-sub="table">Table</button>
+      </div>
+      <div id="resultsContent"><div class="scoreboard-empty">Pick a competition above.</div></div>
+    </div>
+  </section>
+
+  <!-- ARTICLE VIEW -->
+  <section id="articleView" hidden>
+    <button class="back-btn" id="backToFeed">&larr; Back</button>
+    <article class="article" id="articleContent"></article>
+  </section>
+
+  <!-- WRITER VIEW -->
+  <section id="writerView" class="writer" hidden>
+    <button class="back-btn" id="backFromWriter">&larr; Cancel</button>
+    <h2 class="display">Write a new post</h2>
+    <p class="sub">Fill this in and check the SEO panel before you publish — aim for all green.</p>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="f_category">Category</label>
+        <select id="f_category">
+          <option value="club">Club Football News</option>
+          <option value="national">National Team News</option>
+          <option value="transfers">Transfers &amp; Gossip</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f_keyword">Focus keyword</label>
+        <input id="f_keyword" type="text" placeholder="e.g. transfer window">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="f_title">Title</label>
+      <input id="f_title" type="text" placeholder="Headline for the post">
+      <div class="char-count" id="titleCount">0 characters</div>
+    </div>
+
+    <div class="field">
+      <label for="f_meta">Meta description (shown in Google search results)</label>
+      <textarea id="f_meta" placeholder="One or two sentences summarising the post"></textarea>
+      <div class="char-count" id="metaCount">0 characters</div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="f_image">Image URL</label>
+        <input id="f_image" type="text" placeholder="https://...">
+      </div>
+      <div class="field">
+        <label for="f_alt">Image alt text</label>
+        <input id="f_alt" type="text" placeholder="Describe the image">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="f_snippet">Snippet (shown on the homepage card)</label>
+      <textarea id="f_snippet" placeholder="One short sentence to hook readers"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="f_body">Article body — start a line with ## for a subheading</label>
+      <textarea id="f_body" style="min-height:220px" placeholder="Write the full article here..."></textarea>
+      <div class="char-count" id="bodyCount">0 words</div>
+    </div>
+
+    <div class="field">
+      <label style="display:inline-flex;align-items:center;gap:8px;font-family:var(--body);text-transform:none;letter-spacing:0;color:var(--chalk);">
+        <input type="checkbox" id="f_trending" style="width:auto;"> Mark as trending
+      </label>
+    </div>
+
+    <div class="seo-panel">
+      <div class="seo-score-row">
+        <div class="seo-score-circle" id="seoScoreCircle">0</div>
+        <div class="seo-score-label" id="seoScoreLabel">Not analysed yet<span>SEO score</span></div>
+      </div>
+      <ul class="seo-checks" id="seoChecks"></ul>
+    </div>
+
+    <button class="publish-btn" id="publishBtn">Publish post</button>
+    <button class="cancel-btn" id="cancelWriter">Cancel</button>
+  </section>
+
+</main>
+
+<footer>
+  <span id="footerText">© <span id="footerYear">2026</span> <span id="footerSiteName">FOOTY INFORM</span>. All rights reserved.</span><br>
+  <span style="opacity:.7">Check the badge next to "+ New Post" — it shows whether posts are shared with every visitor or saved to this browser only. <button id="resetContent" style="background:none;border:none;color:var(--floodlight);font-family:var(--mono);font-size:11px;text-decoration:underline;cursor:pointer;padding:0;">Reset to sample posts</button></span>
+</footer>
+
+<!-- Shared backend (optional). Free to set up — see notes in the script below.
+     If you don't fill in FIREBASE_CONFIG, the site still works fine using
+     this browser's local storage only. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-// Full script with sample posts and new tab logic
-const tabs = {
-  trending: document.getElementById('tabTrending'),
-  latest: document.getElementById('tabLatest'),
-  results: document.getElementById('tabResults')
+/* =========================================================
+   SHARED BACKEND SETUP (Firebase — free tier is plenty for a blog)
+   =========================================================
+   1. Go to https://console.firebase.google.com → Add project (free).
+   2. In the project, click "Firestore Database" → Create database →
+      start in TEST MODE (fine while you're building; lock it down
+      later — see the rules note further down).
+   3. Click the gear icon → Project settings → scroll to "Your apps" →
+      click the </> (web) icon → register the app → it shows you a
+      config object. Copy those 6 values into FIREBASE_CONFIG below.
+   4. Save this file, push to GitHub, done — every visitor now sees
+      the same posts, live, no page reload needed.
+   Leave the placeholders as-is and the site just runs in local-only
+   mode (posts saved to your browser only) — nothing breaks.
+   ========================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC3voAMmdRAKjQNqPodo48bhpS-Hbk665U",
+  authDomain: "footy-inform.firebaseapp.com",
+  projectId: "footy-inform",
+  storageBucket: "footy-inform.firebasestorage.app",
+  messagingSenderId: "1012360360408",
+  appId: "1:1012360360408:web:05c6fce72031ea870782ad"
+};
+const FIREBASE_READY = !!(FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsWith('PASTE_'));
+let db = null;
+if(FIREBASE_READY){
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+  }catch(e){ console.warn('Firebase failed to start, falling back to local-only mode:', e); }
+}
+</script>
+<script>
+const CONFIG = {
+  siteName: "Footy Inform",   // <-- change the whole site's name here, nowhere else needed
+  copyrightYear: 2026,        // change this each year, or leave autoYear on below
+  autoYear: true              // if true, footer year updates itself automatically
 };
 
-tabs.trending.addEventListener('click', () => switchTab('trending'));
-tabs.latest.addEventListener('click', () => switchTab('latest'));
-tabs.results.addEventListener('click', () => switchTab('results'));
+const CATEGORY_LABELS = { club: "Club", national: "National Team", transfers: "Transfers" };
 
-function switchTab(tab) {
-  // Logic to show/hide views
-  document.getElementById('feedView').hidden = tab !== 'trending' && tab !== 'latest';
-  document.getElementById('resultsView').hidden = tab !== 'results';
-  // ... update active class etc.
+/* =========================================================
+   SAMPLE POSTS — replace with your own. Each post:
+   id, category, title, snippet, image, imageAlt, date (ISO),
+   trending (bool), body (array of paragraph/heading strings)
+   ========================================================= */
+const STORAGE_KEY = "footy-inform-posts-v1";
+
+const SAMPLE_POSTS = [
+  {
+    id: "p1", category: "transfers", trending: true,
+    title: "Ironbridge United close in on club-record deal for winger",
+    snippet: "The Championship-chasing side are one medical away from smashing their transfer ceiling for a 22-year-old wide man.",
+    image: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200&auto=format&fit=crop",
+    imageAlt: "Football players challenging for the ball during a match",
+    date: "2026-07-09",
+    body: [
+      "Ironbridge United are closing in on what would become the club's record signing, with a fee understood to be in the region of £14m plus add-ons agreed in principle.",
+      "## What's driving the deal",
+      "The winger managed 11 goals and 9 assists last season, and the club's recruitment team have reportedly tracked him since he was 19.",
+      "A medical is expected early next week, with the move likely to be confirmed before the transfer window's midpoint."
+    ]
+  },
+  {
+    id: "p2", category: "club", trending: true,
+    title: "Coastal Rovers grind out a gritty away point after late equaliser",
+    snippet: "A stoppage-time header rescued a point on the road, extending the unbeaten run to six matches.",
+    image: "https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=1200&auto=format&fit=crop",
+    imageAlt: "Player heading the ball during a football match",
+    date: "2026-07-08",
+    body: [
+      "Coastal Rovers came from behind to snatch a 1-1 draw in the closing minutes, with the captain rising highest from a corner to level the score.",
+      "## Manager's take",
+      "The head coach praised the squad's resilience after a difficult first half, pointing to fitness levels as a deciding factor late on.",
+      "The result keeps Rovers three points off the top of the table with a game in hand."
+    ]
+  },
+  {
+    id: "p3", category: "national", trending: false,
+    title: "Squad announced for upcoming World Cup qualifiers",
+    snippet: "Two uncapped players make the cut as the manager rings the changes ahead of back-to-back qualifiers.",
+    image: "https://images.unsplash.com/photo-1517927033932-b3d18e61fb3a?q=80&w=1200&auto=format&fit=crop",
+    imageAlt: "National team players training on the pitch",
+    date: "2026-07-06",
+    body: [
+      "The head coach named a 26-man squad on Thursday for the double-header of World Cup qualifiers, handing first call-ups to two uncapped players.",
+      "## Talking points",
+      "The reshuffled midfield reflects a shift toward a more possession-based approach after recent criticism of the team's build-up play.",
+      "The first qualifier kicks off next Friday, with the return leg four days later."
+    ]
+  },
+  {
+    id: "p4", category: "transfers", trending: false,
+    title: "Gossip column: the six names being linked with a January move",
+    snippet: "From a proven goalscorer to a raw teenage prospect — here's who's being talked about this week.",
+    image: "https://images.unsplash.com/photo-1526232761682-d26e03ac148e?q=80&w=1200&auto=format&fit=crop",
+    imageAlt: "Football on the centre spot of a stadium pitch",
+    date: "2026-07-05",
+    body: [
+      "As always, take gossip-column links with a pinch of salt — but here's what's circulating this week among agents and scouts.",
+      "## The headline name",
+      "A proven top-flight goalscorer has reportedly told friends he'd consider a fresh challenge if the right project came along.",
+      "Further down the list, a teenage prospect from the lower leagues continues to attract attention from several bigger clubs' scouting networks."
+    ]
+  },
+  {
+    id: "p5", category: "club", trending: false,
+    title: "Youth academy graduate handed full debut this weekend",
+    snippet: "The 18-year-old midfielder has been in electric form for the reserves and now gets his senior chance.",
+    image: "https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?q=80&w=1200&auto=format&fit=crop",
+    imageAlt: "Young football player controlling the ball",
+    date: "2026-07-03",
+    body: [
+      "An academy graduate will make his first senior start this weekend after a string of impressive performances for the club's reserve side.",
+      "## A long road",
+      "The midfielder joined the academy at age eight and has progressed through every age group, captaining the under-18s to a league title last season.",
+      "The manager described him as ready, adding that opportunities like this are exactly what the academy is built for."
+    ]
+  },
+  {
+    id: "p6", category: "national", trending: false,
+    title: "Veteran defender confirms international retirement after 94 caps",
+    snippet: "A near-two-decade international career comes to a close after this summer's tournament.",
+    image: "https://images.unsplash.com/photo-1543326727-cf6c39e8f84c?q=80&w=1200&auto=format&fit=crop",
+    imageAlt: "Veteran football player on the pitch during a national team match",
+    date: "2026-06-30",
+    body: [
+      "The long-serving defender confirmed his international retirement in a statement on Tuesday, closing the book on a 94-cap career spanning three tournament cycles.",
+      "## Legacy",
+      "He captained the side to a semi-final finish and is widely regarded as one of the most consistent defenders of his generation.",
+      "The federation confirmed a testimonial match will be arranged later this year."
+    ]
+  }
+];
+
+/* =========================================================
+   PERSISTENCE
+   - If Firebase is configured: posts live in Firestore and every
+     visitor sees the same list, updated live.
+   - If not: posts are saved to this browser's local storage only
+     (survives refresh, but nobody else sees them).
+   ========================================================= */
+function loadLocalPosts(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed) && parsed.length) return parsed;
+    }
+  }catch(e){ /* storage unavailable or corrupted — fall back to sample posts */ }
+  return null;
+}
+function saveLocalPosts(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(posts)); }
+  catch(e){ console.warn('Could not save posts to this browser:', e); }
 }
 
-// Sample posts restored
-const SAMPLE_POSTS = [ /* full original sample posts */ ];
+let posts = FIREBASE_READY ? [] : (loadLocalPosts() || SAMPLE_POSTS.slice());
+let firebaseHasLoaded = false;
 
-// ... rest of full script
+function startPostsFeed(){
+  if(!FIREBASE_READY) return;
+  db.collection('posts').orderBy('date','desc').onSnapshot(
+    snapshot=>{
+      firebaseHasLoaded = true;
+      posts = snapshot.empty ? [] : snapshot.docs.map(d=>({ id:d.id, ...d.data() }));
+      buildTicker();
+      renderFeed();
+    },
+    err=>{
+      console.warn('Could not reach the shared database, using this browser\'s local posts instead:', err);
+      posts = loadLocalPosts() || SAMPLE_POSTS.slice();
+      buildTicker();
+      renderFeed();
+    }
+  );
+}
+
+function addPost(newPost){
+  if(FIREBASE_READY){
+    db.collection('posts').add(newPost).catch(err=>alert('Could not publish — check your Firebase setup.\n\n'+err.message));
+  } else {
+    posts.unshift({ id: 'p' + Date.now(), ...newPost });
+    saveLocalPosts();
+    buildTicker();
+    renderFeed();
+  }
+}
+
+function deletePost(id){
+  if(!confirm('Delete this post? This cannot be undone.')) return;
+  if(FIREBASE_READY){
+    db.collection('posts').doc(id).delete().catch(err=>alert('Could not delete: '+err.message));
+  } else {
+    posts = posts.filter(p=>p.id!==id);
+    saveLocalPosts();
+    buildTicker();
+    renderFeed();
+  }
+  showFeed();
+}
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let state = { category: "all", sort: "trending" };
+
+/* =========================================================
+   ELEMENTS
+   ========================================================= */
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+const hamburger = document.getElementById('hamburger');
+
+function openSidebar(){
+  sidebar.classList.add('open');
+  overlay.classList.add('show');
+  hamburger.classList.add('active');
+  hamburger.setAttribute('aria-expanded','true');
+}
+function closeSidebar(){
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+  hamburger.classList.remove('active');
+  hamburger.setAttribute('aria-expanded','false');
+}
+hamburger.addEventListener('click', ()=> sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
+overlay.addEventListener('click', closeSidebar);
+document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
+
+document.querySelectorAll('.nav-item[data-cat]').forEach(el=>{
+  el.addEventListener('click', (e)=>{
+    e.preventDefault();
+    state.category = el.dataset.cat;
+    document.querySelectorAll('.nav-item[data-cat]').forEach(n=>n.classList.remove('active'));
+    el.classList.add('active');
+    closeSidebar();
+    showFeed();
+    renderFeed();
+  });
+});
+document.querySelector('.nav-item[data-cat="all"]').classList.add('active');
+
+/* view tabs: Trending / Latest / Results */
+const tabTrending = document.getElementById('tabTrending');
+const tabLatest = document.getElementById('tabLatest');
+const tabResults = document.getElementById('tabResults');
+const postsPane = document.getElementById('postsPane');
+const resultsPane = document.getElementById('resultsPane');
+
+function activateTab(btn){
+  [tabTrending,tabLatest,tabResults].forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+tabTrending.addEventListener('click', ()=>{ state.sort='trending'; activateTab(tabTrending); postsPane.hidden=false; resultsPane.hidden=true; renderFeed(); });
+tabLatest.addEventListener('click', ()=>{ state.sort='latest'; activateTab(tabLatest); postsPane.hidden=false; resultsPane.hidden=true; renderFeed(); });
+tabResults.addEventListener('click', ()=>{ activateTab(tabResults); postsPane.hidden=true; resultsPane.hidden=false; initResultsTabIfNeeded(); });
+
+/* =========================================================
+   VIEW SWITCHING
+   ========================================================= */
+function showFeed(){
+  document.getElementById('feedView').hidden = false;
+  document.getElementById('articleView').hidden = true;
+  document.getElementById('writerView').hidden = true;
+}
+function showArticle(){
+  document.getElementById('feedView').hidden = true;
+  document.getElementById('articleView').hidden = false;
+  document.getElementById('writerView').hidden = true;
+  window.scrollTo(0,0);
+}
+function showWriter(){
+  document.getElementById('feedView').hidden = true;
+  document.getElementById('articleView').hidden = true;
+  document.getElementById('writerView').hidden = false;
+  window.scrollTo(0,0);
+}
+document.getElementById('backToFeed').addEventListener('click', ()=>{ showFeed(); });
+document.getElementById('openWriter').addEventListener('click', showWriter);
+document.getElementById('sidebarWrite').addEventListener('click', ()=>{ closeSidebar(); showWriter(); });
+document.getElementById('backFromWriter').addEventListener('click', showFeed);
+document.getElementById('cancelWriter').addEventListener('click', showFeed);
+
+/* =========================================================
+   RENDER FEED
+   ========================================================= */
+function fmtDate(iso){
+  const d = new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function renderFeed(){
+  const feed = document.getElementById('feed');
+  const note = document.getElementById('filterNote');
+  let list = posts.slice();
+
+  if(state.category !== 'all'){
+    list = list.filter(p=>p.category===state.category);
+    note.hidden = false;
+    note.innerHTML = `Showing <b style="color:var(--chalk)">${CATEGORY_LABELS[state.category]}</b> only &middot; <button id="clearFilter">show all</button>`;
+    document.getElementById('clearFilter').addEventListener('click', ()=>{
+      state.category='all';
+      document.querySelectorAll('.nav-item[data-cat]').forEach(n=>n.classList.remove('active'));
+      document.querySelector('.nav-item[data-cat="all"]').classList.add('active');
+      renderFeed();
+    });
+  } else {
+    note.hidden = true;
+  }
+
+  if(state.sort === 'trending'){
+    list.sort((a,b)=> (b.trending - a.trending) || (new Date(b.date)-new Date(a.date)));
+  } else {
+    list.sort((a,b)=> new Date(b.date)-new Date(a.date));
+  }
+
+  if(list.length === 0){
+    feed.innerHTML = `<div class="empty-state">No posts in this category yet. Use "+ New Post" to add the first one.</div>`;
+    return;
+  }
+
+  feed.innerHTML = list.map(p=>`
+    <a class="card" href="#" data-id="${p.id}">
+      <img class="card-img" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
+          <span class="dot">&middot;</span>
+          <span>${fmtDate(p.date)}</span>
+          ${p.trending? '<span class="dot">&middot;</span><span class="trending-flag">TRENDING</span>' : ''}
+        </div>
+        <h3>${escapeHtml(p.title)}</h3>
+        <p class="snippet">${escapeHtml(p.snippet)}</p>
+        <span class="read-more">Read full article &rarr;</span>
+      </div>
+    </a>
+  `).join('');
+
+  feed.querySelectorAll('.card').forEach(card=>{
+    card.addEventListener('click', (e)=>{
+      e.preventDefault();
+      openArticle(card.dataset.id);
+    });
+  });
+}
+
+function openArticle(id){
+  const p = posts.find(x=>x.id===id);
+  if(!p) return;
+  const bodyHtml = p.body.map(block=>{
+    if(block.startsWith('## ')) return `<h2>${escapeHtml(block.slice(3))}</h2>`;
+    return `<p>${escapeHtml(block)}</p>`;
+  }).join('');
+  document.getElementById('articleContent').innerHTML = `
+    <img class="article-hero" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}">
+    <div class="article-meta">
+      <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
+      <span>${fmtDate(p.date)}</span>
+    </div>
+    <h1>${escapeHtml(p.title)}</h1>
+    <div class="article-body">${bodyHtml}</div>
+    <button class="cancel-btn" id="deletePostBtn" style="margin-top:24px;">Delete this post</button>
+  `;
+  document.getElementById('deletePostBtn').addEventListener('click', ()=> deletePost(p.id));
+  showArticle();
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+/* =========================================================
+   TICKER
+   ========================================================= */
+function buildTicker(){
+  const items = posts.slice(0,6).map(p=>`<span><b>${CATEGORY_LABELS[p.category].toUpperCase()}</b> — ${escapeHtml(p.title)}</span>`).join('');
+  document.getElementById('tickerTrack').innerHTML = items + items; // duplicate for seamless loop
+}
+
+/* =========================================================
+   SEO CHECKER
+   ========================================================= */
+const seoFields = ['f_title','f_meta','f_keyword','f_image','f_alt','f_body','f_snippet'];
+seoFields.forEach(id=> document.getElementById(id).addEventListener('input', runSeoCheck));
+
+document.getElementById('f_title').addEventListener('input', (e)=>{
+  document.getElementById('titleCount').textContent = e.target.value.length + ' characters';
+});
+document.getElementById('f_meta').addEventListener('input', (e)=>{
+  document.getElementById('metaCount').textContent = e.target.value.length + ' characters';
+});
+document.getElementById('f_body').addEventListener('input', (e)=>{
+  const words = e.target.value.trim().split(/\s+/).filter(Boolean).length;
+  document.getElementById('bodyCount').textContent = words + ' words';
+});
+
+function wordCount(str){ return str.trim().split(/\s+/).filter(Boolean).length; }
+
+function runSeoCheck(){
+  const title = document.getElementById('f_title').value.trim();
+  const meta = document.getElementById('f_meta').value.trim();
+  const keyword = document.getElementById('f_keyword').value.trim().toLowerCase();
+  const alt = document.getElementById('f_alt').value.trim();
+  const body = document.getElementById('f_body').value.trim();
+  const bodyLower = body.toLowerCase();
+
+  const checks = [];
+
+  // Title length
+  checks.push(scoreCheck(
+    title.length >= 40 && title.length <= 60 ? 'good' : (title.length>0 ? 'warn':'bad'),
+    'Title length',
+    `${title.length} characters — aim for 40–60 so it doesn't get cut off in Google.`
+  ));
+
+  // Keyword in title
+  checks.push(scoreCheck(
+    keyword && title.toLowerCase().includes(keyword) ? 'good' : 'bad',
+    'Focus keyword in title',
+    keyword ? (title.toLowerCase().includes(keyword) ? 'Found in title.' : 'Not found in title yet.') : 'Set a focus keyword first.'
+  ));
+
+  // Meta description length
+  checks.push(scoreCheck(
+    meta.length >= 120 && meta.length <= 160 ? 'good' : (meta.length>0 ? 'warn':'bad'),
+    'Meta description length',
+    `${meta.length} characters — aim for 120–160.`
+  ));
+
+  // Keyword in meta
+  checks.push(scoreCheck(
+    keyword && meta.toLowerCase().includes(keyword) ? 'good' : 'warn',
+    'Focus keyword in meta description',
+    keyword && meta.toLowerCase().includes(keyword) ? 'Found in meta description.' : 'Consider working it in naturally.'
+  ));
+
+  // Body length
+  const wc = body ? wordCount(body) : 0;
+  checks.push(scoreCheck(
+    wc >= 300 ? 'good' : (wc>0 ? 'warn':'bad'),
+    'Article length',
+    `${wc} words — 300+ tends to rank better for news posts.`
+  ));
+
+  // Keyword density
+  let density = 0;
+  if(keyword && wc>0){
+    const matches = bodyLower.split(keyword).length - 1;
+    density = (matches / wc) * 100;
+  }
+  checks.push(scoreCheck(
+    keyword ? (density>=0.5 && density<=2.5 ? 'good' : 'warn') : 'bad',
+    'Keyword density in article',
+    keyword ? `${density.toFixed(1)}% — aim for roughly 0.5%–2.5%, don't force it.` : 'Set a focus keyword first.'
+  ));
+
+  // Subheading present
+  checks.push(scoreCheck(
+    /^##\s/m.test(body) ? 'good' : 'warn',
+    'Subheadings',
+    /^##\s/m.test(body) ? 'At least one subheading found.' : 'Add a line starting with "## " to break up the text.'
+  ));
+
+  // Alt text
+  checks.push(scoreCheck(
+    alt.length > 0 ? 'good' : 'bad',
+    'Image alt text',
+    alt.length>0 ? 'Alt text is set.' : 'Describe the image for accessibility and image search.'
+  ));
+
+  // Render checklist
+  const list = document.getElementById('seoChecks');
+  list.innerHTML = checks.map(c=>`
+    <li><span class="seo-dot" style="background:${dotColor(c.level)}"></span>
+      <span><b>${c.label}</b> — ${c.detail}</span>
+    </li>
+  `).join('');
+
+  // Overall score: good=1, warn=0.5, bad=0
+  const total = checks.reduce((sum,c)=> sum + (c.level==='good'?1:c.level==='warn'?0.5:0), 0);
+  const score = Math.round((total/checks.length)*100);
+  const circle = document.getElementById('seoScoreCircle');
+  const label = document.getElementById('seoScoreLabel');
+  circle.textContent = score;
+  const color = score>=80?'good':score>=50?'warn':'bad';
+  circle.style.borderColor = dotColor(color);
+  circle.style.color = dotColor(color);
+  label.innerHTML = (score>=80?'Looking green — ready to publish':score>=50?'Getting there — a few fixes left':'Needs work before publishing') + '<span>SEO score</span>';
+
+  document.getElementById('publishBtn').disabled = !(title && body && meta);
+  return score;
+}
+function scoreCheck(level,label,detail){ return {level,label,detail}; }
+function dotColor(level){ return level==='good' ? 'var(--good)' : level==='warn' ? 'var(--warn)' : 'var(--bad)'; }
+
+document.getElementById('publishBtn').addEventListener('click', ()=>{
+  const title = document.getElementById('f_title').value.trim();
+  const meta = document.getElementById('f_meta').value.trim();
+  const snippet = document.getElementById('f_snippet').value.trim() || meta;
+  const body = document.getElementById('f_body').value.trim();
+  const image = document.getElementById('f_image').value.trim() || 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?q=80&w=1200&auto=format&fit=crop';
+  const alt = document.getElementById('f_alt').value.trim();
+  const category = document.getElementById('f_category').value;
+  const trending = document.getElementById('f_trending').checked;
+
+  if(!title || !body || !meta){ return; }
+
+  const newPost = {
+    category, trending,
+    title, snippet, image, imageAlt: alt,
+    date: new Date().toISOString().slice(0,10),
+    body: body.split(/\n{2,}/).map(b=>b.trim()).filter(Boolean)
+  };
+  addPost(newPost);
+
+  // reset form
+  ['f_title','f_meta','f_keyword','f_image','f_alt','f_snippet','f_body'].forEach(id=> document.getElementById(id).value='');
+  document.getElementById('f_trending').checked = false;
+  runSeoCheck();
+  buildTicker();
+  renderFeed();
+  showFeed();
+});
+
+/* =========================================================
+   FOOTER / BRAND FROM CONFIG
+   ========================================================= */
+document.getElementById('brandMark').innerHTML = CONFIG.siteName.replace(/(\S+)$/, '<em>$1</em>');
+document.getElementById('footerYear').textContent = CONFIG.autoYear ? new Date().getFullYear() : CONFIG.copyrightYear;
+document.getElementById('footerSiteName').textContent = CONFIG.siteName;
+
+document.getElementById('resetContent').addEventListener('click', ()=>{
+  if(FIREBASE_READY){
+    alert('You\'re in shared (live) mode — posts live in Firestore now. Delete individual posts by opening them and using "Delete this post", or manage them from the Firebase console.');
+    return;
+  }
+  if(!confirm('This clears everything you\'ve published in this browser and brings back the 6 sample posts. Continue?')) return;
+  posts = SAMPLE_POSTS.slice();
+  saveLocalPosts();
+  buildTicker();
+  renderFeed();
+  showFeed();
+});
+
+document.getElementById('modeBadge').textContent = FIREBASE_READY ? '● Shared, live' : '● Local only';
+document.getElementById('modeBadge').style.color = FIREBASE_READY ? 'var(--good)' : 'var(--chalk-dim)';
+
+/* =========================================================
+   RESULTS TAB — competitions, full-season fixtures, tables,
+   and a live-match indicator.
+   Uses TheSportsDB (thesportsdb.com), a free football data API.
+   The shared test key "3" works with zero signup, but it's a
+   public key everyone shares, so it's rate-limited — full-season
+   fixture lists are heavy requests and may load slowly or fail
+   at busy times on the shared key.
+   To get your own free key: thesportsdb.com/api.php → sign up →
+   paste it below instead of "3". Same upgrade pattern as Firebase
+   — works out of the box, more reliable once you plug in a key.
+   Note: true real-time live scores need TheSportsDB's paid tier;
+   on the free key, "live" here is worked out from today's fixture
+   list instead of a dedicated live feed, so it may lag a few
+   minutes behind the real match clock.
+   ========================================================= */
+const RESULTS_CONFIG = {
+  apiKey: "3",
+  season: "2025-2026",       // domestic league season format
+  worldCupSeason: "2026",    // FIFA World Cup uses a single year
+  competitions: [
+    { id: "4328", name: "Premier League",  hasTable: true },
+    { id: "4331", name: "Bundesliga",      hasTable: true },
+    { id: "4335", name: "La Liga",         hasTable: true },
+    { id: "4332", name: "Serie A",         hasTable: true },
+    { id: "4334", name: "Ligue 1",         hasTable: true },
+    { id: "4480", name: "Champions League", hasTable: false },
+    { id: "4481", name: "Europa League",     hasTable: false },
+    { id: "4497", name: "Conference League", hasTable: false },
+    { id: "4429", name: "World Cup",         hasTable: false, isWorldCup: true }
+  ]
+};
+
+let resultsState = { compId: RESULTS_CONFIG.competitions[0].id, sub: "fixtures", initialized: false };
+const fixturesCache = {};   // compId -> events array
+const tableCache = {};      // compId -> table array
+
+function initResultsTabIfNeeded(){
+  if(resultsState.initialized) return;
+  resultsState.initialized = true;
+
+  const pillsBox = document.getElementById('compPills');
+  pillsBox.innerHTML = RESULTS_CONFIG.competitions.map(c=>
+    `<button class="comp-pill ${c.id===resultsState.compId?'active':''}" data-comp="${c.id}">${c.name}</button>`
+  ).join('');
+  pillsBox.querySelectorAll('.comp-pill').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      resultsState.compId = btn.dataset.comp;
+      pillsBox.querySelectorAll('.comp-pill').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      updateSubnavForComp();
+      renderResultsContent();
+    });
+  });
+
+  document.querySelectorAll('.subtab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      resultsState.sub = btn.dataset.sub;
+      document.querySelectorAll('.subtab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      renderResultsContent();
+    });
+  });
+
+  updateSubnavForComp();
+  renderResultsContent();
+}
+
+function currentComp(){
+  return RESULTS_CONFIG.competitions.find(c=>c.id===resultsState.compId);
+}
+
+function updateSubnavForComp(){
+  const comp = currentComp();
+  const tableBtn = document.querySelector('.subtab[data-sub="table"]');
+  if(comp.hasTable){
+    tableBtn.hidden = false;
+  } else {
+    tableBtn.hidden = true;
+    if(resultsState.sub === 'table'){
+      resultsState.sub = 'fixtures';
+      document.querySelectorAll('.subtab').forEach(b=>b.classList.remove('active'));
+      document.querySelector('.subtab[data-sub="fixtures"]').classList.add('active');
+    }
+  }
+}
+
+async function renderResultsContent(){
+  const box = document.getElementById('resultsContent');
+  const comp = currentComp();
+  box.innerHTML = `<div class="scoreboard-empty">Loading ${escapeHtml(comp.name)}…</div>`;
+
+  if(resultsState.sub === 'table' && comp.hasTable){
+    renderTable(box, comp);
+  } else {
+    renderFixtures(box, comp);
+  }
+}
+
+async function fetchJSON(url){
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('Request failed: ' + res.status);
+  return res.json();
+}
+
+async function renderTable(box, comp){
+  try{
+    if(!tableCache[comp.id]){
+      const data = await fetchJSON(`https://www.thesportsdb.com/api/v1/json/${RESULTS_CONFIG.apiKey}/lookuptable.php?l=${comp.id}&s=${RESULTS_CONFIG.season}`);
+      tableCache[comp.id] = data.table || [];
+    }
+    const table = tableCache[comp.id];
+    if(!table.length){
+      box.innerHTML = `<div class="scoreboard-empty">No table available for ${escapeHtml(comp.name)} yet — it may not have started, or the free key is rate-limited right now.</div>`;
+      return;
+    }
+    box.innerHTML = `
+      <table class="standings-table">
+        <thead><tr>
+          <th class="num">#</th><th>Team</th><th class="num">P</th><th class="num">W</th>
+          <th class="num">D</th><th class="num">L</th><th class="num">GD</th><th class="num">Pts</th>
+        </tr></thead>
+        <tbody>
+          ${table.map(row=>`
+            <tr>
+              <td class="num">${row.intRank}</td>
+              <td class="team">${escapeHtml(row.strTeam)}</td>
+              <td class="num">${row.intPlayed}</td>
+              <td class="num">${row.intWin}</td>
+              <td class="num">${row.intDraw}</td>
+              <td class="num">${row.intLoss}</td>
+              <td class="num">${row.intGoalDifference}</td>
+              <td class="num">${row.intPoints}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }catch(err){
+    console.warn('Could not load table:', err);
+    box.innerHTML = `<div class="scoreboard-empty">Table temporarily unavailable — the free shared key is rate-limited. Try again shortly, or add your own key in RESULTS_CONFIG.</div>`;
+  }
+}
+
+async function renderFixtures(box, comp){
+  try{
+    if(!fixturesCache[comp.id]){
+      const season = comp.isWorldCup ? RESULTS_CONFIG.worldCupSeason : RESULTS_CONFIG.season;
+      const data = await fetchJSON(`https://www.thesportsdb.com/api/v1/json/${RESULTS_CONFIG.apiKey}/eventsseason.php?id=${comp.id}&s=${season}`);
+      fixturesCache[comp.id] = (data.events || []).sort((a,b)=> new Date(a.dateEvent+'T'+(a.strTime||'00:00:00')) - new Date(b.dateEvent+'T'+(b.strTime||'00:00:00')));
+    }
+    const events = fixturesCache[comp.id];
+    if(!events.length){
+      box.innerHTML = `<div class="scoreboard-empty">No fixtures found for ${escapeHtml(comp.name)} — the free key may be rate-limited right now. Try again shortly.</div>`;
+      return;
+    }
+
+    const todayStr = new Date().toISOString().slice(0,10);
+    let liveCount = 0;
+    let html = '';
+    let lastDate = '';
+    events.forEach(ev=>{
+      if(ev.dateEvent !== lastDate){
+        lastDate = ev.dateEvent;
+        html += `<div class="match-day-label">${fmtDate(ev.dateEvent)}</div>`;
+      }
+      const played = ev.strStatus === 'Match Finished' || (ev.intHomeScore !== null && ev.intHomeScore !== undefined && ev.intHomeScore !== '');
+      const isLive = ev.dateEvent === todayStr && !played;
+      if(isLive) liveCount++;
+      const scoreHtml = played
+        ? `${ev.intHomeScore ?? '–'} - ${ev.intAwayScore ?? '–'}`
+        : (ev.strTime ? ev.strTime.slice(0,5) : 'TBD');
+      html += `
+        <div class="match-row ${isLive?'is-live':''}">
+          <span class="m-team">${escapeHtml(ev.strHomeTeam||'')}</span>
+          <span class="m-score">${scoreHtml}</span>
+          <span class="m-team away">${escapeHtml(ev.strAwayTeam||'')}</span>
+          <span class="m-status">${isLive?'LIVE':(played?'FT':'')}</span>
+        </div>`;
+    });
+    box.innerHTML = html;
+
+    const pill = document.querySelector(`.comp-pill[data-comp="${comp.id}"]`);
+    if(pill){
+      const existing = pill.querySelector('.live-count');
+      if(existing) existing.remove();
+      if(liveCount>0) pill.insertAdjacentHTML('beforeend', `<span class="live-count">${liveCount} LIVE</span>`);
+    }
+  }catch(err){
+    console.warn('Could not load fixtures:', err);
+    box.innerHTML = `<div class="scoreboard-empty">Fixtures temporarily unavailable — the free shared key is rate-limited. Try again shortly, or add your own key in RESULTS_CONFIG.</div>`;
+  }
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+buildTicker();
+renderFeed();
+runSeoCheck();
+startPostsFeed();
 </script>
 </body>
 </html>
