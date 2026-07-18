@@ -262,6 +262,11 @@
     margin:0;color:var(--ink-dim);font-size:13px;line-height:1.4;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
   }
+  .read-badge{
+    font-family:var(--mono);font-size:9px;letter-spacing:.04em;color:#1F4F32;
+    margin-top:4px;display:inline-flex;align-items:center;gap:4px;
+  }
+  .read-badge::before{content:'●';font-size:7px;color:var(--bad);}
 
   /* ============ TRENDING CAROUSEL ============ */
   .section-label{
@@ -315,6 +320,11 @@
     margin-bottom:18px;
   }
   .byline b{color:var(--chalk);}
+  .read-status{
+    font-family:var(--mono);font-size:11px;color:var(--floodlight);
+    margin-bottom:18px;display:flex;align-items:center;gap:6px;
+  }
+  .read-status::before{content:'●';font-size:8px;color:var(--bad);}
 
   .like-row{margin:28px 0 8px;text-align:center;}
   .like-btn{
@@ -385,62 +395,6 @@
   }
   footer a{color:var(--floodlight);}
 
-  /* ============ RESULTS TAB ============ */
-  .comp-pills{
-    display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:6px;
-  }
-  .comp-pill{
-    flex:none;background:var(--pitch);border:1px solid var(--line);color:var(--chalk-dim);
-    font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;
-    padding:8px 13px;border-radius:20px;white-space:nowrap;
-  }
-  .comp-pill.active{background:var(--floodlight);color:var(--ink);border-color:var(--floodlight);font-weight:700;}
-  .comp-pill .live-count{background:var(--bad);color:#fff;border-radius:8px;padding:1px 6px;font-size:9px;margin-left:6px;}
-
-  .results-subnav{display:flex;gap:18px;border-bottom:1px solid var(--line);margin-bottom:16px;}
-  .subtab{
-    background:none;border:none;color:var(--chalk-dim);
-    font-family:var(--display);font-size:14px;letter-spacing:.02em;
-    padding:8px 2px;border-bottom:2px solid transparent;position:relative;top:1px;
-  }
-  .subtab.active{color:var(--chalk);border-bottom-color:var(--floodlight);}
-
-  .match-day-label{
-    font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
-    color:var(--chalk-dim);margin:18px 0 8px;
-  }
-  .match-day-label:first-child{margin-top:0;}
-  .match-row{
-    display:flex;align-items:center;gap:10px;
-    background:var(--card-bg);color:var(--ink);
-    border-radius:var(--radius);padding:10px 14px;margin-bottom:6px;
-    font-size:13.5px;
-  }
-  .match-row.is-live{border-left:3px solid var(--bad);}
-  .match-row .m-team{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .match-row .m-team.away{text-align:right;}
-  .match-row .m-score{
-    font-family:var(--mono);font-weight:700;min-width:54px;text-align:center;
-    color:var(--ink);background:#e8e5d9;border-radius:3px;padding:3px 0;
-  }
-  .match-row.is-live .m-score{background:var(--bad);color:#fff;}
-  .m-status{font-family:var(--mono);font-size:9px;color:var(--ink-dim);min-width:44px;text-align:center;}
-
-  .standings-table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card-bg);color:var(--ink);border-radius:var(--radius);overflow:hidden;}
-  .standings-table th{
-    font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;
-    text-align:left;padding:9px 8px;background:#e8e5d9;color:var(--ink-dim);
-  }
-  .standings-table td{padding:8px;border-top:1px solid rgba(0,0,0,.06);}
-  .standings-table td.num,.standings-table th.num{text-align:center;width:34px;}
-  .standings-table td.team{font-weight:600;}
-  .standings-table tr:nth-child(1) td.team{color:#1F4F32;}
-
-  .scoreboard-empty{
-    font-family:var(--mono);font-size:11px;color:var(--chalk-dim);
-    border:1px dashed var(--line);border-radius:var(--radius);padding:14px;
-  }
-
   /* ============ ADMIN LOGIN PANEL ============ */
   .admin-panel{
     position:fixed;top:64px;right:16px;z-index:60;
@@ -501,12 +455,6 @@
     .article-hero{height:180px;}
     .field-row{flex-direction:column;gap:0;}
     .sidebar{width:82%;max-width:280px;}
-    .score-card{width:130px;padding:10px 10px 8px;}
-    .score-row{font-size:11.5px;}
-    .match-row{font-size:12px;padding:9px 10px;gap:6px;}
-    .m-status{min-width:34px;}
-    .standings-table{font-size:11.5px;}
-    .standings-table th,.standings-table td{padding:6px 5px;}
   }
   @media(min-width:481px) and (max-width:767px){
     .card-img{height:170px;}
@@ -597,24 +545,12 @@
     <div class="view-tabs">
       <button class="view-tab active" id="tabTrending">Trending</button>
       <button class="view-tab" id="tabLatest">Latest</button>
-      <button class="view-tab" id="tabResults">Results</button>
     </div>
 
     <!-- Posts feed (Trending / Latest) -->
     <div id="postsPane">
       <div class="filter-note" id="filterNote" hidden></div>
       <div id="feed"></div>
-    </div>
-
-    <!-- Results pane (competitions: fixtures, tables, live) -->
-    <div id="resultsPane" hidden>
-      <div class="comp-pills" id="compPills"></div>
-      <div class="results-subnav" id="resultsSubnav">
-        <button class="subtab active" data-sub="fixtures">Fixtures</button>
-        <button class="subtab" data-sub="table">Table</button>
-        <button class="subtab" data-sub="live">Live</button>
-      </div>
-      <div id="resultsContent"><div class="scoreboard-empty">Pick a competition above.</div></div>
     </div>
   </section>
 
@@ -898,6 +834,10 @@ function startPostsFeed(){
       posts = snapshot.empty ? [] : snapshot.docs.map(d=>({ id:d.id, ...d.data() }));
       buildTicker();
       renderFeed();
+      // if the article view is currently open, refresh its read-status line too
+      if(!document.getElementById('articleView').hidden && currentOpenArticleId){
+        refreshReadStatusUI(currentOpenArticleId);
+      }
     },
     err=>{
       console.warn('Could not reach the shared database, using this browser\'s local posts instead:', err);
@@ -985,20 +925,16 @@ document.querySelectorAll('.nav-item[data-cat]').forEach(el=>{
 });
 document.querySelector('.nav-item[data-cat="all"]').classList.add('active');
 
-/* view tabs: Trending / Latest / Results */
+/* view tabs: Trending / Latest */
 const tabTrending = document.getElementById('tabTrending');
 const tabLatest = document.getElementById('tabLatest');
-const tabResults = document.getElementById('tabResults');
-const postsPane = document.getElementById('postsPane');
-const resultsPane = document.getElementById('resultsPane');
 
 function activateTab(btn){
-  [tabTrending,tabLatest,tabResults].forEach(b=>b.classList.remove('active'));
+  [tabTrending,tabLatest].forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
 }
-tabTrending.addEventListener('click', ()=>{ state.sort='trending'; activateTab(tabTrending); postsPane.hidden=false; resultsPane.hidden=true; renderFeed(); });
-tabLatest.addEventListener('click', ()=>{ state.sort='latest'; activateTab(tabLatest); postsPane.hidden=false; resultsPane.hidden=true; renderFeed(); });
-tabResults.addEventListener('click', ()=>{ activateTab(tabResults); postsPane.hidden=true; resultsPane.hidden=false; initResultsTabIfNeeded(); });
+tabTrending.addEventListener('click', ()=>{ state.sort='trending'; activateTab(tabTrending); renderFeed(); });
+tabLatest.addEventListener('click', ()=>{ state.sort='latest'; activateTab(tabLatest); renderFeed(); });
 
 /* =========================================================
    VIEW SWITCHING
@@ -1268,6 +1204,7 @@ function stopCarousel(){
 }
 
 function cardHtml(p){
+  const readBadge = p.lastReadAt ? `<div class="read-badge">Read ${timeAgo(p.lastReadAt)}</div>` : '';
   return `
     <a class="card-h" href="#" data-id="${p.id}">
       <img class="card-h-img" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
@@ -1279,6 +1216,7 @@ function cardHtml(p){
         </div>
         <h3>${escapeHtml(p.title)}</h3>
         <p class="snippet-h">${escapeHtml(p.snippet)}</p>
+        ${readBadge}
       </div>
     </a>`;
 }
@@ -1380,6 +1318,41 @@ function renderFeed(){
   attachCardHandlers(feed);
 }
 
+/* =========================================================
+   READ TRACKING — every time an article is opened, we stamp
+   "lastReadAt" with the current time and save it to Firestore
+   (or local storage if Firebase isn't configured). That
+   timestamp is what powers the "Read 3 minutes ago" / "Read
+   just now" line on both the homepage card and the article
+   itself, using the same relative-time logic as the post date.
+   A live timer keeps the on-screen text ticking upward while
+   the article stays open, without needing a page refresh.
+   ========================================================= */
+let currentOpenArticleId = null;
+let readStatusTimer = null;
+
+function recordRead(post){
+  const now = new Date().toISOString();
+  post.lastReadAt = now; // reflect immediately in local state
+  if(FIREBASE_READY){
+    db.collection('posts').doc(post.id).update({ lastReadAt: now })
+      .catch(err=> console.warn('Could not save read time:', err));
+  } else {
+    saveLocalPosts();
+  }
+}
+
+function refreshReadStatusUI(id){
+  const p = posts.find(x=>x.id===id);
+  if(!p) return;
+  const statusEl = document.getElementById('readStatus');
+  if(statusEl) statusEl.textContent = p.lastReadAt ? `Read ${timeAgo(p.lastReadAt)}` : 'Read just now';
+}
+
+function stopReadStatusTimer(){
+  if(readStatusTimer){ clearInterval(readStatusTimer); readStatusTimer = null; }
+}
+
 function openArticle(id){
   const p = posts.find(x=>x.id===id);
   if(!p) return;
@@ -1387,6 +1360,10 @@ function openArticle(id){
   const likedIds = getLikedPostIds();
   const isLiked = likedIds.includes(id);
   const likeCount = p.likes || 0;
+
+  currentOpenArticleId = id;
+  recordRead(p);
+
   document.getElementById('articleContent').innerHTML = `
     <img class="article-hero" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}">
     <div class="article-meta">
@@ -1395,6 +1372,7 @@ function openArticle(id){
     </div>
     <h1>${escapeHtml(p.title)}</h1>
     <div class="byline">By <b>${escapeHtml(p.author || 'Footy Post Staff')}</b> &middot; ${timeAgo(p.date)}</div>
+    <div class="read-status" id="readStatus">Read just now</div>
     <div class="article-body">${bodyHtml}</div>
     <div class="like-row">
       <button class="like-btn ${isLiked ? 'liked' : ''}" id="likeBtn" data-id="${id}">
@@ -1413,8 +1391,18 @@ function openArticle(id){
   if(delBtn) delBtn.addEventListener('click', ()=> deletePost(p.id));
   const likeBtn = document.getElementById('likeBtn');
   if(likeBtn) likeBtn.addEventListener('click', ()=> toggleLike(p));
+
+  stopReadStatusTimer();
+  readStatusTimer = setInterval(()=> refreshReadStatusUI(id), 15000);
+
+  // reflect the fresh "Read just now" on the homepage card too, next
+  // time the feed is drawn (e.g. when the user hits Back)
+  renderFeed();
+
   showArticle();
 }
+
+document.getElementById('backToFeed').addEventListener('click', stopReadStatusTimer);
 
 /* =========================================================
    LIKES — one like per browser (tracked in localStorage), stored
@@ -1629,7 +1617,7 @@ document.getElementById('publishBtn').addEventListener('click', ()=>{
 function renderDashboard(){
   const box = document.getElementById('dashboardList');
   if(!posts.length){
-    box.innerHTML = `<div class="scoreboard-empty">No posts yet — use "+ New Post" to write your first one.</div>`;
+    box.innerHTML = `<div class="empty-state">No posts yet — use "+ New Post" to write your first one.</div>`;
     return;
   }
   const sorted = posts.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
@@ -1688,297 +1676,6 @@ document.getElementById('resetContent').addEventListener('click', ()=>{
 
 document.getElementById('modeBadge').textContent = FIREBASE_READY ? '● Shared, live' : '● Local only';
 document.getElementById('modeBadge').style.color = FIREBASE_READY ? 'var(--good)' : 'var(--chalk-dim)';
-
-/* =========================================================
-   RESULTS TAB — competitions, full-season fixtures, tables,
-   and a live-match indicator.
-
-   Primary source: football-data.org — a free football data API
-   that supports real browser (CORS) requests once you register.
-   Free signup: football-data.org/client/register → confirm the
-   email → copy your token → paste it into FOOTBALL_DATA_CONFIG
-   below. Free tier: 10 requests/minute, covers Premier League,
-   Bundesliga, La Liga, Serie A, Ligue 1, Champions League, and
-   the World Cup — exactly what you asked for.
-
-   Europa League and Conference League aren't on football-data.org's
-   free tier, so those two still run on TheSportsDB's shared free
-   test key ("3") as a fallback — same rate-limit caveats as before
-   for just those two competitions.
-
-   Note on "live": football-data.org does report true match status
-   (IN_PLAY / PAUSED / FINISHED), so Premier League etc. show genuine
-   live state once your key is in. The two TheSportsDB-backed
-   competitions still use the "today + not finished" approximation,
-   since real-time status needs TheSportsDB's paid tier.
-   ========================================================= */
-const FOOTBALL_DATA_CONFIG = {
-  apiKey: "93d5bdf3f3a242da97724114509eeed5"
-};
-const FOOTBALL_DATA_READY = !!(FOOTBALL_DATA_CONFIG.apiKey && !FOOTBALL_DATA_CONFIG.apiKey.startsWith('PASTE_'));
-const SPORTSDB_CONFIG = { apiKey: "123" }; // TheSportsDB's current free test key (was "3", they changed it).
-// Honest limitation: TheSportsDB's free tier caps eventsseason.php at 15
-// matches per competition — it will never return a full season, only the
-// first 15 it finds. A $9/month key (thesportsdb.com, via Patreon) raises
-// that to 3000. See the note near RESULTS_CONFIG above for the plan.
-
-const RESULTS_CONFIG = {
-  season: "2025-2026",       // domestic league season format (football-data ignores this, uses current season automatically)
-  worldCupSeason: "2026",    // TheSportsDB-style single year, used only by sportsdb-backed comps
-  competitions: [
-    // NOTE: these were pointed at football-data.org, but that account is
-    // currently stuck returning a CORS header locked to "http://localhost"
-    // (see the email-support note above). Routed through TheSportsDB for
-    // now so the site keeps working — switch provider back to
-    // "football-data" once football-data.org confirms CORS is fixed.
-    { id: "4328", name: "Premier League",     provider: "sportsdb", hasTable: true },
-    { id: "4331", name: "Bundesliga",         provider: "sportsdb", hasTable: true },
-    { id: "4335", name: "La Liga",            provider: "sportsdb", hasTable: true },
-    { id: "4332", name: "Serie A",            provider: "sportsdb", hasTable: true },
-    { id: "4334", name: "Ligue 1",            provider: "sportsdb", hasTable: true },
-    { id: "4480", name: "Champions League",   provider: "sportsdb", hasTable: false },
-    { id: "4481", name: "Europa League",      provider: "sportsdb", hasTable: false },
-    { id: "4497", name: "Conference League",  provider: "sportsdb", hasTable: false },
-    { id: "4429", name: "World Cup",          provider: "sportsdb", hasTable: false, isWorldCup: true }
-  ]
-};
-
-let resultsState = { compId: RESULTS_CONFIG.competitions[0].id, sub: "fixtures", initialized: false };
-const fixturesCache = {};   // compId -> normalized match array
-const tableCache = {};      // compId -> table rows
-
-function initResultsTabIfNeeded(){
-  if(resultsState.initialized) return;
-  resultsState.initialized = true;
-
-  const pillsBox = document.getElementById('compPills');
-  pillsBox.innerHTML = RESULTS_CONFIG.competitions.map(c=>
-    `<button class="comp-pill ${c.id===resultsState.compId?'active':''}" data-comp="${c.id}">${c.name}</button>`
-  ).join('');
-  pillsBox.querySelectorAll('.comp-pill').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      resultsState.compId = btn.dataset.comp;
-      pillsBox.querySelectorAll('.comp-pill').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      updateSubnavForComp();
-      renderResultsContent();
-    });
-  });
-
-  document.querySelectorAll('.subtab').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      resultsState.sub = btn.dataset.sub;
-      document.querySelectorAll('.subtab').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      renderResultsContent();
-    });
-  });
-
-  updateSubnavForComp();
-  renderResultsContent();
-}
-
-function currentComp(){
-  return RESULTS_CONFIG.competitions.find(c=>c.id===resultsState.compId);
-}
-
-function updateSubnavForComp(){
-  const comp = currentComp();
-  const tableBtn = document.querySelector('.subtab[data-sub="table"]');
-  if(comp.hasTable){
-    tableBtn.hidden = false;
-  } else {
-    tableBtn.hidden = true;
-    if(resultsState.sub === 'table'){
-      resultsState.sub = 'fixtures';
-      document.querySelectorAll('.subtab').forEach(b=>b.classList.remove('active'));
-      document.querySelector('.subtab[data-sub="fixtures"]').classList.add('active');
-    }
-  }
-}
-
-async function renderResultsContent(){
-  const box = document.getElementById('resultsContent');
-  const comp = currentComp();
-
-  if(comp.provider === 'football-data' && !FOOTBALL_DATA_READY){
-    box.innerHTML = `<div class="scoreboard-empty">Add your free football-data.org key to FOOTBALL_DATA_CONFIG near the top of the script to see ${escapeHtml(comp.name)} — sign up free at football-data.org/client/register.</div>`;
-    return;
-  }
-
-  box.innerHTML = `<div class="scoreboard-empty">Loading ${escapeHtml(comp.name)}…</div>`;
-
-  if(resultsState.sub === 'table' && comp.hasTable){
-    renderTable(box, comp);
-  } else if(resultsState.sub === 'live'){
-    renderLive(box, comp);
-  } else {
-    renderFixtures(box, comp);
-  }
-}
-
-/* ---------- data fetching, normalized to one shape per match ---------- */
-async function fetchJSON(url, headers){
-  const res = await fetch(url, headers ? { headers } : undefined);
-  if(!res.ok) throw new Error('Request failed: ' + res.status);
-  return res.json();
-}
-
-async function fetchMatches(comp){
-  if(comp.provider === 'football-data'){
-    const data = await fetchJSON(`https://api.football-data.org/v4/competitions/${comp.id}/matches`, { 'X-Auth-Token': FOOTBALL_DATA_CONFIG.apiKey });
-    return (data.matches || []).map(m=>({
-      date: m.utcDate ? m.utcDate.slice(0,10) : '',
-      time: m.utcDate ? m.utcDate.slice(11,16) : '',
-      home: m.homeTeam?.shortName || m.homeTeam?.name || 'TBD',
-      away: m.awayTeam?.shortName || m.awayTeam?.name || 'TBD',
-      homeScore: m.score?.fullTime?.home,
-      awayScore: m.score?.fullTime?.away,
-      played: m.status === 'FINISHED',
-      live: m.status === 'IN_PLAY' || m.status === 'PAUSED'
-    }));
-  } else {
-    const season = comp.isWorldCup ? RESULTS_CONFIG.worldCupSeason : RESULTS_CONFIG.season;
-    const data = await fetchJSON(`https://www.thesportsdb.com/api/v1/json/${SPORTSDB_CONFIG.apiKey}/eventsseason.php?id=${comp.id}&s=${season}`);
-    const todayStr = new Date().toISOString().slice(0,10);
-    return (data.events || []).map(ev=>{
-      const played = ev.strStatus === 'Match Finished' || (ev.intHomeScore !== null && ev.intHomeScore !== undefined && ev.intHomeScore !== '');
-      return {
-        date: ev.dateEvent || '',
-        time: ev.strTime ? ev.strTime.slice(0,5) : '',
-        home: ev.strHomeTeam || 'TBD',
-        away: ev.strAwayTeam || 'TBD',
-        homeScore: ev.intHomeScore,
-        awayScore: ev.intAwayScore,
-        played,
-        live: ev.dateEvent === todayStr && !played
-      };
-    });
-  }
-}
-
-async function loadFixturesForComp(comp){
-  if(!fixturesCache[comp.id]){
-    const matches = await fetchMatches(comp);
-    fixturesCache[comp.id] = matches.sort((a,b)=> new Date(b.date+'T'+(b.time||'00:00')) - new Date(a.date+'T'+(a.time||'00:00')));
-  }
-  return fixturesCache[comp.id];
-}
-
-/* ---------- rendering ---------- */
-async function renderFixtures(box, comp){
-  try{
-    const matches = await loadFixturesForComp(comp);
-    if(!matches.length){
-      box.innerHTML = `<div class="scoreboard-empty">No fixtures found for ${escapeHtml(comp.name)} right now.</div>`;
-      return;
-    }
-
-    let liveCount = 0;
-    let html = '';
-    let lastDate = '';
-    matches.forEach(m=>{
-      if(m.date !== lastDate){
-        lastDate = m.date;
-        html += `<div class="match-day-label">${fmtDate(m.date)}</div>`;
-      }
-      if(m.live) liveCount++;
-      const scoreHtml = m.played || m.live
-        ? `${m.homeScore ?? 0} - ${m.awayScore ?? 0}`
-        : (m.time || 'TBD');
-      html += `
-        <div class="match-row ${m.live?'is-live':''}">
-          <span class="m-team">${escapeHtml(m.home)}</span>
-          <span class="m-score">${scoreHtml}</span>
-          <span class="m-team away">${escapeHtml(m.away)}</span>
-          <span class="m-status">${m.live?'LIVE':(m.played?'FT':'')}</span>
-        </div>`;
-    });
-    box.innerHTML = html;
-
-    const pill = document.querySelector(`.comp-pill[data-comp="${comp.id}"]`);
-    if(pill){
-      const existing = pill.querySelector('.live-count');
-      if(existing) existing.remove();
-      if(liveCount>0) pill.insertAdjacentHTML('beforeend', `<span class="live-count">${liveCount} LIVE</span>`);
-    }
-  }catch(err){
-    console.warn('Could not load fixtures:', err);
-    box.innerHTML = `<div class="scoreboard-empty">Fixtures temporarily unavailable for ${escapeHtml(comp.name)} — check your API key, or the free tier may be rate-limited. Try again shortly.</div>`;
-  }
-}
-
-async function renderLive(box, comp){
-  try{
-    const matches = await loadFixturesForComp(comp);
-    const live = matches.filter(m=>m.live);
-    if(!live.length){
-      box.innerHTML = `<div class="scoreboard-empty">No live ${escapeHtml(comp.name)} matches right now. Check back on a matchday.</div>`;
-      return;
-    }
-    box.innerHTML = live.map(m=>`
-      <div class="match-row is-live">
-        <span class="m-team">${escapeHtml(m.home)}</span>
-        <span class="m-score">${m.homeScore ?? 0} - ${m.awayScore ?? 0}</span>
-        <span class="m-team away">${escapeHtml(m.away)}</span>
-        <span class="m-status">LIVE</span>
-      </div>`).join('');
-  }catch(err){
-    console.warn('Could not load live matches:', err);
-    box.innerHTML = `<div class="scoreboard-empty">Live matches temporarily unavailable for ${escapeHtml(comp.name)}.</div>`;
-  }
-}
-
-async function renderTable(box, comp){
-  try{
-    if(!tableCache[comp.id]){
-      if(comp.provider === 'football-data'){
-        const data = await fetchJSON(`https://api.football-data.org/v4/competitions/${comp.id}/standings`, { 'X-Auth-Token': FOOTBALL_DATA_CONFIG.apiKey });
-        const total = (data.standings || []).find(s=>s.type === 'TOTAL');
-        tableCache[comp.id] = (total ? total.table : []).map(row=>({
-          rank: row.position, team: row.team?.shortName || row.team?.name || '',
-          played: row.playedGames, win: row.won, draw: row.draw, loss: row.lost,
-          gd: row.goalDifference, pts: row.points
-        }));
-      } else {
-        const data = await fetchJSON(`https://www.thesportsdb.com/api/v1/json/${SPORTSDB_CONFIG.apiKey}/lookuptable.php?l=${comp.id}&s=${RESULTS_CONFIG.season}`);
-        tableCache[comp.id] = (data.table || []).map(row=>({
-          rank: row.intRank, team: row.strTeam,
-          played: row.intPlayed, win: row.intWin, draw: row.intDraw, loss: row.intLoss,
-          gd: row.intGoalDifference, pts: row.intPoints
-        }));
-      }
-    }
-    const table = tableCache[comp.id];
-    if(!table.length){
-      box.innerHTML = `<div class="scoreboard-empty">No table available for ${escapeHtml(comp.name)} yet.</div>`;
-      return;
-    }
-    box.innerHTML = `
-      <table class="standings-table">
-        <thead><tr>
-          <th class="num">#</th><th>Team</th><th class="num">P</th><th class="num">W</th>
-          <th class="num">D</th><th class="num">L</th><th class="num">GD</th><th class="num">Pts</th>
-        </tr></thead>
-        <tbody>
-          ${table.map(row=>`
-            <tr>
-              <td class="num">${row.rank}</td>
-              <td class="team">${escapeHtml(row.team)}</td>
-              <td class="num">${row.played}</td>
-              <td class="num">${row.win}</td>
-              <td class="num">${row.draw}</td>
-              <td class="num">${row.loss}</td>
-              <td class="num">${row.gd}</td>
-              <td class="num">${row.pts}</td>
-            </tr>`).join('')}
-        </tbody>
-      </table>`;
-  }catch(err){
-    console.warn('Could not load table:', err);
-    box.innerHTML = `<div class="scoreboard-empty">Table temporarily unavailable — check your football-data.org key, or the free tier may be rate-limited.</div>`;
-  }
-}
 
 /* =========================================================
    INSTALLABLE APP (PWA)
