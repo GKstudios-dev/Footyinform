@@ -321,7 +321,7 @@
   .card-h-like:active{transform:scale(0.94);}
   .card-h-like .heart{font-size:13px;line-height:1;}
   .card-h-like.liked{
-    background:rgba(255,182,39,0.16);border-color:var(--floodlight-dim);color:#8A6420;
+    background:rgba(31,79,50,0.18);border-color:#1F4F32;color:#1F4F32;font-weight:700;
   }
 
   /* ============ TRENDING CAROUSEL ============ */
@@ -605,19 +605,19 @@
     </div>
 
     <div class="view-tabs">
-      <button class="view-tab active" id="tabTrending">Trending</button>
-      <button class="view-tab" id="tabLatest">Latest</button>
+      <button class="view-tab active" id="tabHome">Home</button>
+      <button class="view-tab" id="tabTrendingOnly">Trending</button>
     </div>
 
-    <!-- Category chips — same destinations as the sidebar links, just a faster path -->
+    <!-- Category chips — same destinations as the sidebar links, just a faster path.
+         "All Stories" lives in the drawer already, so it's deliberately left out here. -->
     <div class="chip-row" id="chipRow">
-      <button class="chip active" data-cat="all">All Stories</button>
       <button class="chip" data-cat="club">Club Football</button>
       <button class="chip" data-cat="national">National Teams</button>
       <button class="chip" data-cat="transfers">Transfers</button>
     </div>
 
-    <!-- Posts feed (Trending / Latest) -->
+    <!-- Posts feed (Home / Trending) -->
     <div id="postsPane">
       <div class="filter-note" id="filterNote" hidden></div>
       <div id="feed"></div>
@@ -668,12 +668,19 @@
       <div class="char-count" id="metaCount">0 characters</div>
     </div>
 
-    <div class="field">
-      <label for="f_image_file">Image</label>
-      <input id="f_image_file" type="file" accept="image/*">
-      <img id="f_image_preview" hidden style="width:100%;max-height:220px;object-fit:cover;border-radius:var(--radius);margin-top:10px;">
-      <label for="f_alt" style="margin-top:12px;">Image alt text</label>
-      <input id="f_alt" type="text" placeholder="Describe the image">
+    <div class="field-row">
+      <div class="field">
+        <label for="f_image_file">Image</label>
+        <input id="f_image_file" type="file" accept="image/*">
+        <img id="f_image_preview" hidden style="width:100%;max-height:220px;object-fit:cover;border-radius:var(--radius);margin-top:10px;">
+        <label for="f_alt" style="margin-top:12px;">Image alt text</label>
+        <input id="f_alt" type="text" placeholder="Describe the image">
+      </div>
+      <div class="field">
+        <label for="f_tags">Tags</label>
+        <input id="f_tags" type="text" placeholder="e.g. Chelsea, transfer window, Messi">
+        <div class="char-count" style="text-align:left;margin-top:6px;line-height:1.5;">Separate with commas — club names, player names, whatever this post is about. Used for search in the app.</div>
+      </div>
     </div>
 
     <div class="field">
@@ -957,7 +964,7 @@ function deletePost(id){
 /* =========================================================
    STATE
    ========================================================= */
-let state = { category: "all", sort: "trending" };
+let state = { category: "all", sort: "home" };
 
 /* =========================================================
    ELEMENTS
@@ -1010,16 +1017,17 @@ document.getElementById('searchBarStub').addEventListener('click', ()=>{
   document.getElementById('hamburger').focus();
 });
 
-/* view tabs: Trending / Latest */
-const tabTrending = document.getElementById('tabTrending');
-const tabLatest = document.getElementById('tabLatest');
+/* view tabs: Home (carousel + all latest stories) / Trending (only posts
+   marked "trending" in the dashboard) — matches the app's Home/Trending tabs */
+const tabHome = document.getElementById('tabHome');
+const tabTrendingOnly = document.getElementById('tabTrendingOnly');
 
 function activateTab(btn){
-  [tabTrending,tabLatest].forEach(b=>b.classList.remove('active'));
+  [tabHome,tabTrendingOnly].forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
 }
-tabTrending.addEventListener('click', ()=>{ state.sort='trending'; activateTab(tabTrending); renderFeed(); });
-tabLatest.addEventListener('click', ()=>{ state.sort='latest'; activateTab(tabLatest); renderFeed(); });
+tabHome.addEventListener('click', ()=>{ state.sort='home'; activateTab(tabHome); renderFeed(); });
+tabTrendingOnly.addEventListener('click', ()=>{ state.sort='trendingOnly'; activateTab(tabTrendingOnly); renderFeed(); });
 
 /* =========================================================
    VIEW SWITCHING
@@ -1142,7 +1150,7 @@ function resetWriterForm(){
   editingPostId = null;
   document.getElementById('writerHeading').textContent = 'Write a new post';
   document.getElementById('publishBtn').textContent = 'Publish post';
-  ['f_title','f_meta','f_keyword','f_alt','f_snippet'].forEach(id=> document.getElementById(id).value='');
+  ['f_title','f_meta','f_keyword','f_alt','f_snippet','f_tags'].forEach(id=> document.getElementById(id).value='');
   document.getElementById('f_author').value = 'Footy Post Staff';
   document.getElementById('f_body_rich').innerHTML = '';
   document.getElementById('f_category').value = 'club';
@@ -1163,6 +1171,7 @@ function loadPostIntoWriter(post){
   document.getElementById('f_author').value = post.author || 'Footy Post Staff';
   document.getElementById('f_alt').value = post.imageAlt || '';
   document.getElementById('f_snippet').value = post.snippet || '';
+  document.getElementById('f_tags').value = Array.isArray(post.tags) ? post.tags.join(', ') : (post.tags || '');
   document.getElementById('f_category').value = post.category || 'club';
   document.getElementById('f_trending').checked = !!post.trending;
   currentImageDataUrl = post.image || null;
@@ -1357,6 +1366,15 @@ function startCarousel(count){
   }, 5000);
 }
 
+// Reader-facing empty state for the feed. While Firestore hasn't sent its
+// first snapshot yet, this is "loading", not "empty" — so readers should
+// never see "no articles" or an admin-only "+ New Post" hint at that point.
+function feedEmptyMessage(fallback){
+  if(FIREBASE_READY && !firebaseHasLoaded) return 'Loading articles…';
+  if(isAdmin()) return 'No posts in this category yet. Use "+ New Post" to add the first one.';
+  return fallback;
+}
+
 function renderFeed(){
   const feed = document.getElementById('feed');
   const note = document.getElementById('filterNote');
@@ -1374,7 +1392,7 @@ function renderFeed(){
     note.hidden = true;
   }
 
-  if(state.sort === 'trending'){
+  if(state.sort === 'home'){
     const trendList = posts.filter(p=>p.trending).sort((a,b)=> new Date(b.date)-new Date(a.date));
     list.sort((a,b)=> (b.trending - a.trending) || (new Date(b.date)-new Date(a.date)));
 
@@ -1383,7 +1401,7 @@ function renderFeed(){
       html += `<div class="section-label">Latest Stories</div>`;
       html += list.map(p=>cardHtml(p)).join('');
     } else if(!trendList.length){
-      html += `<div class="empty-state">No posts in this category yet. Use "+ New Post" to add the first one.</div>`;
+      html += `<div class="empty-state">${feedEmptyMessage('No articles yet — check back soon.')}</div>`;
     }
     feed.innerHTML = html;
     attachCardHandlers(feed);
@@ -1397,10 +1415,13 @@ function renderFeed(){
     return;
   }
 
+  // state.sort === 'trendingOnly' — only posts marked "trending" in the
+  // dashboard, no carousel, newest first. Mirrors the app's Trending tab.
+  list = list.filter(p=>p.trending);
   list.sort((a,b)=> new Date(b.date)-new Date(a.date));
 
   if(list.length === 0){
-    feed.innerHTML = `<div class="empty-state">No posts in this category yet. Use "+ New Post" to add the first one.</div>`;
+    feed.innerHTML = `<div class="empty-state">${feedEmptyMessage('No trending articles yet.')}</div>`;
     return;
   }
 
@@ -1723,12 +1744,16 @@ document.getElementById('publishBtn').addEventListener('click', ()=>{
   const author = document.getElementById('f_author').value.trim() || 'Footy Post Staff';
   const trending = document.getElementById('f_trending').checked;
   const focusKeyword = document.getElementById('f_keyword').value.trim();
+  const tags = document.getElementById('f_tags').value
+    .split(',')
+    .map(t=>t.trim())
+    .filter(Boolean);
 
   if(!title || !bodyHtml || !meta){ return; }
 
   const postData = {
     category, trending, author,
-    title, snippet, image, imageAlt: alt, metaDescription: meta, focusKeyword,
+    title, snippet, image, imageAlt: alt, metaDescription: meta, focusKeyword, tags,
     body: bodyHtml
   };
 
