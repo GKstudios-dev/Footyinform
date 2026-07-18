@@ -196,6 +196,11 @@
   }
   .search-bar svg{width:18px;height:18px;flex:none;opacity:.6;}
   .search-bar span{font-family:var(--body);font-size:14px;color:var(--ink-dim);}
+  .search-bar input{
+    flex:1;border:none;background:transparent;outline:none;
+    font-family:var(--body);font-size:14px;color:var(--ink);
+  }
+  .search-bar input::placeholder{color:var(--ink-dim);}
 
   /* ============ CATEGORY CHIPS (matches app's chip row under the tabs) ============ */
   .chip-row{
@@ -624,6 +629,16 @@
     </div>
   </section>
 
+  <!-- SEARCH VIEW -->
+  <section id="searchView" hidden>
+    <button class="back-btn" id="backFromSearch">&larr; Back</button>
+    <div class="search-bar" style="cursor:text;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="searchInput" type="text" placeholder="Search articles, teams, players...">
+    </div>
+    <div id="searchResults"></div>
+  </section>
+
   <!-- ARTICLE VIEW -->
   <section id="articleView" hidden>
     <button class="back-btn" id="backToFeed">&larr; Back</button>
@@ -1011,12 +1026,6 @@ document.querySelectorAll('.chip[data-cat]').forEach(el=>{
   el.addEventListener('click', ()=> setCategory(el.dataset.cat));
 });
 
-// Search bar stub — matches the app's search entry point visually;
-// hook this up to real search whenever there's a query to run it against.
-document.getElementById('searchBarStub').addEventListener('click', ()=>{
-  document.getElementById('hamburger').focus();
-});
-
 /* view tabs: Home (carousel + all latest stories) / Trending (only posts
    marked "trending" in the dashboard) — matches the app's Home/Trending tabs */
 const tabHome = document.getElementById('tabHome');
@@ -1037,11 +1046,19 @@ function hideAllViews(){
   document.getElementById('articleView').hidden = true;
   document.getElementById('writerView').hidden = true;
   document.getElementById('dashboardView').hidden = true;
+  document.getElementById('searchView').hidden = true;
 }
 function showFeed(){ hideAllViews(); document.getElementById('feedView').hidden = false; }
 function showArticle(){ hideAllViews(); document.getElementById('articleView').hidden = false; window.scrollTo(0,0); }
 function showWriter(){ hideAllViews(); document.getElementById('writerView').hidden = false; window.scrollTo(0,0); }
 function showDashboard(){ hideAllViews(); document.getElementById('dashboardView').hidden = false; window.scrollTo(0,0); renderDashboard(); }
+function showSearch(){
+  hideAllViews();
+  document.getElementById('searchView').hidden = false;
+  window.scrollTo(0,0);
+  renderSearchResults();
+  document.getElementById('searchInput').focus();
+}
 
 document.getElementById('backToFeed').addEventListener('click', ()=>{ showFeed(); });
 document.getElementById('openWriter').addEventListener('click', ()=>{ resetWriterForm(); showWriter(); });
@@ -1050,6 +1067,47 @@ document.getElementById('backFromWriter').addEventListener('click', showFeed);
 document.getElementById('cancelWriter').addEventListener('click', showFeed);
 document.getElementById('openDashboard').addEventListener('click', showDashboard);
 document.getElementById('backFromDashboard').addEventListener('click', showFeed);
+document.getElementById('backFromSearch').addEventListener('click', showFeed);
+
+// Search bar — opens the real search view (was previously just a visual
+// stub with no working search behind it).
+document.getElementById('searchBarStub').addEventListener('click', showSearch);
+
+/* =========================================================
+   SEARCH — same word-prefix matching used in the app: a word has to
+   START WITH the query, not just contain it anywhere. That's what stops
+   "reach" or "coach" from matching a search for "ch", while "Chelsea" or
+   "Championship" still match correctly. Checks title, snippet, category,
+   and tags (so team/player tags set in the writer form are searchable).
+   ========================================================= */
+function wordStartsWith(text, query){
+  if(!text) return false;
+  const words = String(text).toLowerCase().split(/[^a-z0-9]+/);
+  return words.some(w=> w.startsWith(query));
+}
+function matchesSearch(post, query){
+  const tagsText = Array.isArray(post.tags) ? post.tags.join(' ') : (post.tags || '');
+  return wordStartsWith(post.title, query) ||
+    wordStartsWith(post.snippet, query) ||
+    wordStartsWith(post.category, query) ||
+    wordStartsWith(tagsText, query);
+}
+function renderSearchResults(){
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  const box = document.getElementById('searchResults');
+  if(!query){
+    box.innerHTML = `<div class="empty-state">Search for articles, teams, or players</div>`;
+    return;
+  }
+  const results = posts.filter(p=> matchesSearch(p, query));
+  if(!results.length){
+    box.innerHTML = `<div class="empty-state">No articles found for &quot;${escapeHtml(query)}&quot;</div>`;
+    return;
+  }
+  box.innerHTML = results.map(p=>cardHtml(p)).join('');
+  attachCardHandlers(box);
+}
+document.getElementById('searchInput').addEventListener('input', renderSearchResults);
 
 /* =========================================================
    RICH TEXT TOOLBAR
@@ -1298,7 +1356,7 @@ function stopCarousel(){
 }
 
 function cardHtml(p){
-  const readBadge = p.lastReadAt ? `<div class="read-badge">Read ${timeAgo(p.lastReadAt)}</div>` : '<span></span>';
+  const readBadge = p.readAt ? `<div class="read-badge">Read ${timeAgo(p.readAt)}</div>` : '<span></span>';
   const isLiked = getLikedPostIds().includes(p.id);
   const likeCount = p.likes || 0;
   return `
@@ -1431,7 +1489,7 @@ function renderFeed(){
 
 /* =========================================================
    READ TRACKING — every time an article is opened, we stamp
-   "lastReadAt" with the current time and save it to Firestore
+   "readAt" with the current time and save it to Firestore
    (or local storage if Firebase isn't configured). That
    timestamp is what powers the "Read 3 minutes ago" / "Read
    just now" line on both the homepage card and the article
@@ -1446,9 +1504,9 @@ let readStatusTimer = null;
 
 function recordRead(post){
   const now = new Date().toISOString();
-  post.lastReadAt = now; // reflect immediately in local state
+  post.readAt = now; // reflect immediately in local state
   if(FIREBASE_READY){
-    db.collection('posts').doc(post.id).update({ lastReadAt: now })
+    db.collection('posts').doc(post.id).update({ readAt: now })
       .catch(err=> console.warn('Could not save read time:', err));
   } else {
     saveLocalPosts();
@@ -1459,7 +1517,7 @@ function refreshReadStatusUI(id){
   const p = posts.find(x=>x.id===id);
   if(!p) return;
   const statusEl = document.getElementById('readStatus');
-  if(statusEl) statusEl.textContent = p.lastReadAt ? `Read ${timeAgo(p.lastReadAt)}` : 'Read just now';
+  if(statusEl) statusEl.textContent = p.readAt ? `Read ${timeAgo(p.readAt)}` : 'Read just now';
 }
 
 function stopReadStatusTimer(){
