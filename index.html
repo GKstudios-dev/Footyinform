@@ -9,7 +9,662 @@
 <meta name="description" content="The Football Post-football coverage: club news, national team news, and transfer gossip.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css">
+<style>
+/* ============ DESIGN TOKENS ============ */
+:root{
+  --pitch-dark:#0E2A1B;      /* deep pitch green — page background */
+  --pitch:#163B26;           /* panel green */
+  --pitch-light:#1F4F32;     /* hover/border green */
+  --chalk:#F4F2E9;           /* chalk-line off white — primary text on dark */
+  --chalk-dim:#C9D3C6;       /* secondary text on dark */
+  --ink:#0F2016;             /* text on light surfaces */
+  --ink-dim:#4B5D51;
+  --floodlight:#FFB627;      /* amber accent — floodlight glow */
+  --floodlight-dim:#8A6420;
+  --line:rgba(244,242,233,0.12);
+  --card-bg:#F4F2E9;
+  --good:#3F9D63;
+  --warn:#E0A012;
+  --bad:#D8452D;
+  --radius:2px;
+  --display:'Oswald',sans-serif;
+  --body:'Inter',sans-serif;
+  --mono:'Space Mono',monospace;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--pitch-dark);
+  color:var(--chalk);
+  font-family:var(--body);
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4,.display{font-family:var(--display);text-transform:uppercase;letter-spacing:.02em;}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;cursor:pointer;}
+::selection{background:var(--floodlight);color:var(--ink);}
+
+/* ============ TOP BAR ============ */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  display:flex;align-items:center;gap:14px;
+  padding:14px 20px;
+  background:var(--pitch-dark);
+  border-bottom:1px solid var(--line);
+}
+.hamburger{
+  width:38px;height:34px;
+  background:transparent;border:1px solid var(--line);
+  border-radius:var(--radius);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;
+  transition:border-color .2s, background .2s;
+}
+.hamburger:hover{border-color:var(--floodlight);}
+.hamburger span{width:18px;height:2px;background:var(--chalk);display:block;transition:transform .25s, opacity .2s;}
+.hamburger.active span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger.active span:nth-child(2){opacity:0;}
+.hamburger.active span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+.brand{display:flex;align-items:baseline;gap:8px;flex:1;}
+.brand .mark{
+  font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:.03em;color:var(--chalk);
+  text-transform:uppercase;
+}
+.brand .mark em{
+  font-style:normal;color:var(--floodlight);
+}
+.brand .tagline{
+  font-family:var(--mono);font-size:10px;color:var(--chalk-dim);letter-spacing:.08em;
+  display:none;
+}
+@media(min-width:640px){.brand .tagline{display:inline;}}
+
+.write-btn{
+  border:1px solid var(--floodlight-dim);
+  color:var(--floodlight);
+  background:transparent;
+  padding:8px 14px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  border-radius:var(--radius);
+  transition:background .2s,color .2s;
+}
+.write-btn:hover{background:var(--floodlight);color:var(--ink);}
+
+/* ============ TICKER (signature element) ============ */
+.ticker{
+  background:var(--pitch);
+  border-bottom:1px solid var(--line);
+  overflow:hidden;
+  white-space:nowrap;
+  position:relative;
+}
+.ticker::before{
+  content:'LIVE';
+  position:absolute;left:0;top:0;bottom:0;z-index:2;
+  display:flex;align-items:center;
+  padding:0 12px;
+  background:var(--bad);
+  font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--chalk);
+}
+.ticker-track{
+  display:inline-block;
+  padding-left:100%;
+  animation:scroll-ticker 90s linear infinite;
+  font-family:var(--mono);font-size:12px;color:var(--floodlight);
+  padding-top:7px;padding-bottom:7px;
+}
+.ticker:hover .ticker-track{animation-play-state:paused;}
+.ticker-track span{margin-right:40px;color:var(--chalk-dim);}
+.ticker-track span b{color:var(--floodlight);font-weight:700;}
+@keyframes scroll-ticker{from{transform:translateX(0);}to{transform:translateX(-100%);}}
+@media(prefers-reduced-motion:reduce){.ticker-track{animation:none;padding-left:64px;}}
+
+/* ============ SIDEBAR ============ */
+#overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);
+  z-index:45;opacity:0;pointer-events:none;transition:opacity .25s;
+}
+#overlay.show{opacity:1;pointer-events:auto;}
+
+.sidebar{
+  position:fixed;top:0;left:0;bottom:0;
+  width:280px;
+  background:var(--pitch);
+  border-right:1px solid var(--line);
+  transform:translateX(-100%);
+  transition:transform .28s ease;
+  z-index:50;
+  display:flex;flex-direction:column;
+  padding:20px 0;
+  overflow-y:auto;
+}
+.sidebar.open{transform:translateX(0);}
+.sidebar-head{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:0 20px 18px;border-bottom:1px solid var(--line);margin-bottom:8px;
+}
+.sidebar-head .display{font-size:15px;color:var(--chalk-dim);}
+.sidebar-close{background:none;border:none;color:var(--chalk-dim);font-size:20px;line-height:1;}
+.sidebar-close:hover{color:var(--floodlight);}
+
+.nav-section-label{
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--chalk-dim);
+  padding:14px 20px 6px;text-transform:uppercase;
+}
+.nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 20px;
+  border-left:3px solid transparent;
+  color:var(--chalk-dim);
+  font-family:var(--display);font-size:15px;letter-spacing:.02em;
+  transition:background .2s,color .2s,border-color .2s;
+  background:none;border-top:none;border-right:none;border-bottom:none;
+  width:100%;text-align:left;
+}
+.nav-item:hover{background:var(--pitch-light);color:var(--chalk);}
+.nav-item.active{
+  color:var(--chalk);background:var(--pitch-light);
+  border-left-color:var(--floodlight);
+}
+.nav-item .ico{width:18px;height:18px;flex:none;opacity:.85;}
+.nav-item .count{
+  margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--floodlight);
+}
+.nav-item.disabled{opacity:.4;cursor:default;}
+.nav-item.disabled:hover{background:transparent;color:var(--chalk-dim);}
+.nav-more{
+  margin:14px 20px 0;padding:12px 14px;
+  border:1px dashed var(--line);border-radius:var(--radius);
+  font-family:var(--mono);font-size:10px;color:var(--chalk-dim);line-height:1.5;
+}
+.sidebar-write{
+  margin:auto 20px 4px;
+  padding:12px 14px;
+  border:1px solid var(--floodlight-dim);border-radius:var(--radius);
+  color:var(--floodlight);font-family:var(--mono);font-size:11px;text-align:center;
+  letter-spacing:.05em;text-transform:uppercase;
+}
+.sidebar-write:hover{background:var(--floodlight);color:var(--ink);}
+
+/* Sidebar account tile — mirrors the app drawer's "Sign In / To like and
+   comment on articles" tile, or the signed-in "email + tap to sign out". */
+.sidebar-account{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 20px;margin-bottom:4px;
+  color:var(--chalk);
+  font-family:var(--display);font-size:15px;
+  border-left:3px solid transparent;
+  width:100%;text-align:left;background:none;border-top:none;border-right:none;border-bottom:none;
+}
+.sidebar-account:hover{background:var(--pitch-light);}
+.sidebar-account .acct-ico{width:20px;height:20px;flex:none;opacity:.85;}
+.sidebar-account .acct-text{display:flex;flex-direction:column;min-width:0;}
+.sidebar-account .acct-main{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sidebar-account .acct-sub{
+  font-family:var(--body);font-size:11.5px;color:var(--chalk-dim);letter-spacing:0;
+  text-transform:none;
+}
+
+/* ============ SEARCH BAR (matches app's search field on the home tab) ============ */
+.search-bar{
+  display:flex;align-items:center;gap:8px;
+  background:var(--card-bg);color:var(--ink-dim);
+  border-radius:21px;
+  padding:0 14px;height:42px;
+  margin-bottom:16px;
+  cursor:pointer;
+  border:1px solid rgba(0,0,0,.06);
+}
+.search-bar svg{width:18px;height:18px;flex:none;opacity:.6;}
+.search-bar span{font-family:var(--body);font-size:14px;color:var(--ink-dim);}
+.search-bar input{
+  flex:1;border:none;background:transparent;outline:none;
+  font-family:var(--body);font-size:14px;color:var(--ink);
+}
+.search-bar input::placeholder{color:var(--ink-dim);}
+
+/* ============ CATEGORY CHIPS (matches app's chip row under the tabs) ============ */
+.chip-row{
+  display:flex;gap:8px;overflow-x:auto;
+  margin:2px 0 22px;padding-bottom:2px;
+  scrollbar-width:none;
+}
+.chip-row::-webkit-scrollbar{display:none;}
+.chip{
+  flex:none;
+  padding:8px 14px;border-radius:18px;
+  border:1px solid var(--line);
+  background:transparent;
+  color:var(--chalk);
+  font-family:var(--body);font-size:13px;font-weight:600;
+  white-space:nowrap;
+  transition:border-color .2s, background .2s, color .2s;
+}
+.chip:hover{border-color:var(--floodlight);}
+.chip.active{
+  background:var(--floodlight);border-color:var(--floodlight);color:var(--ink);
+}
+
+/* ============ MAIN ============ */
+main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
+
+.view-tabs{
+  display:flex;gap:0;
+  border-bottom:1px solid var(--line);
+  margin-bottom:22px;
+}
+.view-tab{
+  background:none;border:none;
+  padding:10px 4px;margin-right:26px;
+  font-family:var(--display);font-size:16px;letter-spacing:.02em;
+  color:var(--chalk-dim);
+  border-bottom:2px solid transparent;
+  position:relative;top:1px;
+}
+.view-tab.active{color:var(--chalk);border-bottom-color:var(--floodlight);}
+.filter-note{
+  font-family:var(--mono);font-size:11px;color:var(--chalk-dim);margin:-14px 0 20px;
+}
+.filter-note button{background:none;border:none;color:var(--floodlight);font-family:var(--mono);font-size:11px;text-decoration:underline;padding:0;}
+
+/* ============ POST CARD ============ */
+.card{
+  display:block;background:var(--card-bg);color:var(--ink);
+  border-radius:var(--radius);overflow:hidden;
+  margin-bottom:22px;
+  border:1px solid rgba(0,0,0,.06);
+  transition:transform .18s, box-shadow .18s;
+}
+.card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.35);}
+.card-img{width:100%;height:190px;object-fit:cover;display:block;background:var(--pitch-light);}
+.card-body{padding:16px 18px 18px;}
+.card-meta{
+  display:flex;align-items:center;gap:10px;margin-bottom:8px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+}
+.tag{
+  padding:3px 8px;border-radius:2px;color:#fff;font-weight:700;
+}
+.tag.club{background:#1F4F32;}
+.tag.national{background:#7A4A16;}
+.tag.transfers{background:#7A2E1F;}
+.card-meta .dot{color:var(--ink-dim);}
+.card-meta .trending-flag{color:var(--bad);font-weight:700;}
+.card h3{font-size:21px;margin:0 0 8px;line-height:1.18;}
+.card p.snippet{margin:0;color:var(--ink-dim);font-size:15.5px;line-height:1.6;}
+.read-more{display:inline-block;margin-top:10px;font-family:var(--mono);font-size:11px;color:#1F4F32;text-decoration:underline;}
+
+.empty-state{
+  padding:50px 20px;text-align:center;color:var(--chalk-dim);
+  border:1px dashed var(--line);border-radius:var(--radius);
+  font-family:var(--mono);font-size:12px;
+}
+
+/* ============ HORIZONTAL CARD (mobile-app style) ============
+   Uses a REAL CSS float for the image: the title+snippet text flows in
+   normal document flow right beside it, wrapping naturally for as many
+   lines as the image is tall, then continuing at the full card width
+   once it passes the image's bottom edge — exactly the behavior the
+   app's Flutter code has to hand-build with a custom text-measuring
+   widget. No JS needed for this part; the browser's native text
+   wrapping engine already does it correctly for any snippet length. */
+.card-h{
+  display:block;background:var(--card-bg);color:var(--ink);
+  border-radius:var(--radius);overflow:hidden;margin-bottom:12px;
+  border:1px solid rgba(0,0,0,.06);padding:10px;
+  transition:transform .18s, box-shadow .18s;
+}
+.card-h:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(0,0,0,.3);}
+.card-h-flow{overflow:hidden;} /* contains the float so the card doesn't collapse around it */
+.card-h-img{
+  float:left;
+  width:140px;height:90px;object-fit:cover;border-radius:6px;
+  margin:0 12px 6px 0;background:var(--pitch-light);
+}
+.card-h-meta{
+  display:inline-flex;align-items:center;gap:6px;margin-bottom:4px;
+  font-family:var(--mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;
+}
+.card-h h3{
+  font-size:15px;margin:4px 0 4px;line-height:1.3;font-weight:800;
+  font-family:var(--body);text-transform:none;letter-spacing:0;
+  display:inline;
+}
+.snippet-h{
+  margin:0;color:var(--ink-dim);font-size:16px;line-height:1.4;
+}
+.read-badge{
+  font-family:var(--mono);font-size:9px;letter-spacing:.04em;color:#1F4F32;
+  display:inline-flex;align-items:center;gap:4px;
+}
+.read-badge::before{content:'●';font-size:7px;color:var(--bad);}
+
+/* Bottom row of a card: read-time on the left, like/comment pinned to the
+   bottom-right corner — mirrors the app's category-label / like-button row.
+   clear:both drops this below the floated image + wrapped text regardless
+   of how long the snippet is, which is the whole point of using float. */
+.card-h-foot{
+  clear:both;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:8px;min-height:20px;
+}
+.card-h-actions{display:flex;align-items:center;gap:6px;margin-left:auto;}
+.card-h-like,.card-h-comment{
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(31,79,50,0.08);border:1px solid rgba(31,79,50,0.25);
+  color:#1F4F32;border-radius:14px;
+  padding:3px 9px;
+  font-family:var(--body);font-size:11px;font-weight:600;
+  transition:background .15s,border-color .15s,color .15s,transform .1s;
+  flex:none;
+}
+.card-h-like:active{transform:scale(0.94);}
+.card-h-like .heart{font-size:13px;line-height:1;}
+.card-h-like.liked{
+  background:rgba(31,79,50,0.18);border-color:#1F4F32;color:#1F4F32;font-weight:700;
+}
+.card-h-comment .bubble{font-size:12px;line-height:1;}
+
+/* ============ TRENDING CAROUSEL ============ */
+.section-label{
+  font-family:var(--display);font-size:16px;color:var(--chalk);
+  margin:24px 0 12px;letter-spacing:.02em;
+}
+.trending-carousel{position:relative;margin-bottom:6px;}
+.trending-track{position:relative;height:280px;border-radius:12px;overflow:hidden;}
+.trending-slide{
+  position:absolute;inset:0;background-size:contain;
+background-repeat:no-repeat;background-position:center;
+  border-radius:12px;opacity:0;transition:opacity .6s ease;pointer-events:none;
+  display:block;
+}
+.trending-slide.active{opacity:1;pointer-events:auto;}
+.trending-slide-overlay{
+  position:absolute;left:0;right:0;bottom:0;padding:18px;
+  background:linear-gradient(to top, rgba(0,0,0,.82), transparent);
+  color:#fff;
+}
+.trending-slide-overlay .badge{
+  display:inline-block;background:var(--floodlight);color:var(--ink);
+  font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;
+  letter-spacing:.05em;margin-bottom:8px;
+}
+.trending-slide-overlay h3{
+  font-size:19px;margin:0;line-height:1.25;
+  text-transform:none;letter-spacing:0;font-family:var(--body);font-weight:700;
+}
+.trending-dots{display:flex;justify-content:center;gap:5px;margin-top:10px;}
+.trending-dot{width:6px;height:6px;border-radius:3px;background:var(--line);transition:width .3s, background .3s;}
+.trending-dot.active{width:18px;background:var(--floodlight);}
+
+/* ============ ARTICLE VIEW ============ */
+.back-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:none;border:1px solid var(--line);color:var(--chalk-dim);
+  padding:7px 12px;font-family:var(--mono);font-size:11px;border-radius:var(--radius);
+  margin-bottom:20px;
+}
+.back-btn:hover{border-color:var(--floodlight);color:var(--floodlight);}
+.article-hero{width:100%;height:260px;object-fit:cover;border-radius:var(--radius);margin-bottom:18px;}
+.article-meta{font-family:var(--mono);font-size:11px;color:var(--chalk-dim);margin-bottom:8px;display:flex;gap:10px;align-items:center;}
+.article h1{font-size:32px;line-height:1.1;margin:0 0 16px;}
+.article-body{font-size:19px;line-height:1.85;color:var(--chalk);}
+.article-body p{margin:0 0 18px;}
+.article-body h2{font-family:var(--display);font-size:20px;margin:26px 0 12px;color:var(--floodlight);}
+.article-body img{max-width:100%;height:auto;border-radius:var(--radius);margin:14px 0;display:block;}
+.article-body a.inline-post-link{color:var(--floodlight);text-decoration:underline;text-decoration-color:var(--floodlight-dim);text-underline-offset:2px;}
+.article-body a.inline-post-link:hover{text-decoration-color:var(--floodlight);}
+
+.article-subtitle{
+  font-family:var(--body);font-size:17px;line-height:1.5;color:var(--chalk-dim);
+  margin:0 0 18px;font-weight:500;
+}
+.img-caption{
+  font-family:var(--mono);font-size:11px;color:var(--chalk-dim);
+  margin:-10px 0 18px;line-height:1.5;
+}
+
+/* ============ RELATED ARTICLES ============ */
+.related-section{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);}
+.related-grid{display:grid;grid-template-columns:1fr;gap:16px;}
+@media(min-width:640px){.related-grid{grid-template-columns:1fr 1fr;}}
+@media(min-width:900px){.related-grid{grid-template-columns:1fr 1fr 1fr;}}
+.related-card{display:block;}
+.related-card img{width:100%;height:140px;object-fit:cover;border-radius:var(--radius);margin-bottom:8px;display:block;background:var(--pitch-light);}
+.related-card .tag{margin-bottom:6px;}
+.related-card h4{
+  margin:0;font-size:14.5px;line-height:1.35;color:var(--chalk);
+  font-family:var(--body);font-weight:700;text-transform:none;letter-spacing:0;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+}
+
+/* ============ COMMENTS ============ */
+.comments-section{margin-top:36px;padding-top:24px;border-top:1px solid var(--line);}
+.comments-heading{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+.comments-heading .section-label{margin:0;}
+.comments-heading .count{font-family:var(--mono);font-size:12px;color:var(--chalk-dim);}
+.comment-compose{margin-bottom:20px;}
+.comment-compose textarea{
+  width:100%;background:var(--pitch);border:1px solid var(--line);color:var(--chalk);
+  padding:10px 12px;font-family:var(--body);font-size:14px;border-radius:var(--radius);
+  min-height:70px;resize:vertical;
+}
+.comment-compose .compose-foot{
+  display:flex;align-items:center;justify-content:space-between;margin-top:8px;
+}
+.comment-compose .char-hint{font-family:var(--mono);font-size:10px;color:var(--chalk-dim);}
+.comment-signin-hint{
+  padding:14px;border:1px dashed var(--line);border-radius:var(--radius);
+  font-family:var(--body);font-size:13.5px;color:var(--chalk-dim);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  margin-bottom:20px;
+}
+.comment-list{display:flex;flex-direction:column;gap:14px;}
+.comment-item{
+  border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;background:var(--pitch);
+}
+.comment-item .comment-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;
+}
+.comment-item .comment-author{font-family:var(--mono);font-size:11.5px;color:var(--floodlight);}
+.comment-item .comment-time{font-family:var(--mono);font-size:10px;color:var(--chalk-dim);}
+.comment-item .comment-text{font-size:14.5px;line-height:1.55;color:var(--chalk);white-space:pre-wrap;word-break:break-word;}
+.comment-item .comment-del{
+  background:none;border:none;color:var(--chalk-dim);font-family:var(--mono);font-size:10px;
+  text-decoration:underline;padding:0;
+}
+.comment-item .comment-del:hover{color:var(--bad);}
+.comment-empty{font-family:var(--mono);font-size:12px;color:var(--chalk-dim);padding:10px 0;}
+
+/* ============ READER AUTH MODAL ============ */
+.auth-modal{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:70;
+  background:var(--pitch);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px;width:min(340px,90vw);
+  box-shadow:0 14px 34px rgba(0,0,0,.45);
+}
+.auth-modal h3{font-size:18px;margin:0 0 4px;}
+.auth-modal .sub{font-family:var(--body);color:var(--chalk-dim);font-size:12.5px;margin-bottom:16px;text-transform:none;letter-spacing:0;}
+.auth-modal .field{margin-bottom:12px;}
+.auth-modal .auth-error{color:var(--bad);font-family:var(--mono);font-size:11px;margin-bottom:10px;min-height:14px;}
+.auth-modal .auth-switch{
+  text-align:center;font-family:var(--mono);font-size:11px;color:var(--chalk-dim);margin-top:12px;
+}
+.auth-modal .auth-switch button{background:none;border:none;color:var(--floodlight);text-decoration:underline;font-family:var(--mono);font-size:11px;padding:0;}
+
+/* ============ INLINE ARTICLE-LINK PICKER (writer tool) ============ */
+.link-picker{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:70;
+  background:var(--pitch);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;width:min(360px,90vw);max-height:70vh;
+  box-shadow:0 14px 34px rgba(0,0,0,.45);
+  display:flex;flex-direction:column;
+}
+.link-picker input[type="text"]{margin-bottom:10px;}
+.link-picker-list{overflow-y:auto;flex:1;}
+.link-picker-item{
+  display:block;width:100%;text-align:left;
+  background:var(--pitch-dark);border:1px solid var(--line);color:var(--chalk);
+  padding:9px 11px;border-radius:var(--radius);font-family:var(--body);font-size:13px;
+  margin-bottom:6px;
+}
+.link-picker-item:hover{border-color:var(--floodlight);}
+.link-picker-item small{display:block;color:var(--chalk-dim);font-family:var(--mono);font-size:10px;margin-top:2px;}
+
+.byline{
+  font-family:var(--mono);font-size:11.5px;color:var(--chalk-dim);
+  margin-bottom:18px;
+}
+.byline b{color:var(--chalk);}
+.read-status{
+  font-family:var(--mono);font-size:11px;color:var(--floodlight);
+  margin-bottom:18px;display:flex;align-items:center;gap:6px;
+}
+.read-status::before{content:'●';font-size:8px;color:var(--bad);}
+
+.like-row{margin:28px 0 8px;text-align:center;display:flex;align-items:center;justify-content:center;gap:12px;}
+.like-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--pitch);border:1px solid var(--line);color:var(--chalk-dim);
+  padding:10px 20px;border-radius:24px;font-family:var(--body);font-size:14px;font-weight:600;
+  transition:background .2s,border-color .2s,color .2s;
+}
+.like-btn .heart{font-size:18px;line-height:1;}
+.like-btn.liked{background:rgba(255,182,39,0.12);border-color:var(--floodlight);color:var(--floodlight);}
+.like-btn:hover{border-color:var(--floodlight);}
+
+/* ============ WRITER / SEO PANEL ============ */
+.writer h2.display{font-size:24px;margin-bottom:4px;}
+.writer .sub{color:var(--chalk-dim);font-size:13px;margin-bottom:22px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--chalk-dim);margin-bottom:6px;}
+.field input,.field textarea,.field select{
+  width:100%;background:var(--pitch);border:1px solid var(--line);color:var(--chalk);
+  padding:10px 12px;font-family:var(--body);font-size:14px;border-radius:var(--radius);
+}
+.field textarea{resize:vertical;min-height:70px;line-height:1.5;}
+.field-row{display:flex;gap:14px;}
+.field-row .field{flex:1;}
+.char-count{font-family:var(--mono);font-size:10px;color:var(--chalk-dim);margin-top:4px;text-align:right;}
+
+.seo-panel{
+  background:var(--pitch);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px;margin:22px 0;
+}
+.seo-score-row{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.seo-score-circle{
+  width:52px;height:52px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-weight:700;font-size:16px;
+  border:3px solid var(--line);flex:none;
+}
+.seo-score-label{font-family:var(--display);font-size:15px;letter-spacing:.02em;}
+.seo-score-label span{display:block;font-family:var(--mono);font-size:10px;color:var(--chalk-dim);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+.seo-checks{list-style:none;margin:0;padding:0;}
+.seo-checks li{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:8px 0;border-top:1px solid var(--line);
+  font-size:13px;color:var(--chalk-dim);
+}
+.seo-checks li:first-child{border-top:none;}
+.seo-dot{width:9px;height:9px;border-radius:50%;flex:none;margin-top:4px;}
+.seo-checks li b{color:var(--chalk);}
+
+.publish-btn{
+  background:var(--floodlight);color:var(--ink);border:none;
+  padding:12px 22px;font-family:var(--display);font-size:15px;letter-spacing:.03em;
+  border-radius:var(--radius);
+}
+.publish-btn:hover{background:#ffc95c;}
+.publish-btn:disabled{opacity:.4;cursor:not-allowed;}
+.cancel-btn{
+  background:none;border:1px solid var(--line);color:var(--chalk-dim);
+  padding:12px 18px;font-family:var(--mono);font-size:12px;border-radius:var(--radius);margin-left:10px;
+}
+
+/* ============ FOOTER ============ */
+footer{
+  border-top:1px solid var(--line);
+  padding:26px 20px 40px;
+  text-align:center;
+  font-family:var(--mono);font-size:11px;color:var(--chalk-dim);
+}
+footer a{color:var(--floodlight);}
+
+/* ============ ADMIN LOGIN PANEL ============ */
+.admin-panel{
+  position:fixed;top:64px;right:16px;z-index:60;
+  background:var(--pitch);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;width:220px;box-shadow:0 14px 34px rgba(0,0,0,.45);
+}
+
+/* ============ RICH TEXT EDITOR ============ */
+.rich-toolbar{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;}
+.rich-toolbar button{
+  background:var(--pitch-dark);border:1px solid var(--line);color:var(--chalk);
+  padding:6px 11px;border-radius:var(--radius);font-family:var(--body);font-size:13px;
+}
+.rich-toolbar button:hover{border-color:var(--floodlight);}
+.rich-editor{
+  width:100%;min-height:220px;background:var(--pitch);border:1px solid var(--line);color:var(--chalk);
+  padding:12px 14px;font-size:18px;line-height:1.75;border-radius:var(--radius);
+  font-family:var(--body);
+}
+.rich-editor:empty:before{content:attr(data-placeholder);color:var(--chalk-dim);}
+.rich-editor h2{font-family:var(--display);font-size:19px;color:var(--floodlight);margin:14px 0 8px;}
+.rich-editor ul{margin:8px 0 8px 22px;}
+.rich-editor p{margin:0 0 10px;}
+.rich-editor img{max-width:100%;height:auto;border-radius:var(--radius);margin:8px 0;display:block;}
+
+/* ============ DASHBOARD ============ */
+.dash-row{
+  display:flex;align-items:center;gap:12px;
+  background:var(--pitch);border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px 14px;margin-bottom:8px;
+}
+.dash-row .dash-thumb{width:52px;height:52px;object-fit:cover;border-radius:var(--radius);flex:none;}
+.dash-row .dash-info{flex:1;min-width:0;}
+.dash-row .dash-title{font-size:14px;color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dash-row .dash-meta{font-family:var(--mono);font-size:10px;color:var(--chalk-dim);margin-top:2px;}
+.dash-row .dash-actions{display:flex;gap:6px;flex:none;}
+.dash-row .dash-actions button{
+  font-family:var(--mono);font-size:10px;padding:6px 10px;border-radius:var(--radius);
+  border:1px solid var(--line);background:var(--pitch-dark);color:var(--chalk-dim);
+}
+.dash-row .dash-actions button.edit-btn:hover{border-color:var(--floodlight);color:var(--floodlight);}
+.dash-row .dash-actions button.del-btn:hover{border-color:var(--bad);color:var(--bad);}
+
+[hidden]{display:none !important;}
+
+/* ============ MOBILE ============ */
+@media(max-width:480px){
+  .topbar{padding:10px 12px;gap:10px;}
+  .brand .mark{font-size:17px;}
+  #modeBadge{display:none;} /* keep header uncluttered on small phones; still visible on tablet+ */
+  .write-btn{padding:7px 10px;font-size:10px;}
+  main{padding:18px 12px 50px;}
+  .card-img{height:150px;}
+  .card-body{padding:13px 14px 15px;}
+  .card h3{font-size:18px;}
+  .view-tab{font-size:14px;margin-right:18px;}
+  .article h1{font-size:24px;}
+  .article-hero{height:180px;}
+  .field-row{flex-direction:column;gap:0;}
+  .sidebar{width:82%;max-width:280px;}
+}
+@media(min-width:481px) and (max-width:767px){
+  .card-img{height:170px;}
+}
+
+/* focus visibility */
+a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--floodlight);outline-offset:2px;
+}
+
+</style>
 </head>
 <body>
 
@@ -308,15 +963,1697 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
-<script src="js/firebase-config.js"></script>
-<script src="js/state.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/likes.js"></script>
-<script src="js/comments.js"></script>
-<script src="js/render.js"></script>
-<script src="js/article.js"></script>
-<script src="js/writer.js"></script>
-<script src="js/dashboard.js"></script>
-<script src="js/main.js"></script>
+<script>
+/* =========================================================
+   SHARED BACKEND SETUP (Firebase — free tier is plenty for a blog)
+   =========================================================
+   1. Go to https://console.firebase.google.com → Add project (free).
+   2. In the project, click "Firestore Database" → Create database →
+      start in TEST MODE (fine while you're building; lock it down
+      later with your security rules).
+   3. Click the gear icon → Project settings → scroll to "Your apps" →
+      click the </> (web) icon → register the app → it shows you a
+      config object. Copy those 6 values into FIREBASE_CONFIG below.
+   4. Save this file, push to GitHub, done — every visitor now sees
+      the same posts, live, no page reload needed.
+   Leave the placeholders as-is and the site just runs in local-only
+   mode (posts saved to your browser only) — nothing breaks.
+   ========================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC3voAMmdRAKjQNqPodo48bhpS-Hbk665U",
+  authDomain: "footy-inform.firebaseapp.com",
+  projectId: "footy-inform",
+  storageBucket: "footy-inform.firebasestorage.app",
+  messagingSenderId: "1012360360408",
+  appId: "1:1012360360408:web:05c6fce72031ea870782ad"
+};
+const FIREBASE_READY = !!(FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsWith('PASTE_'));
+let db = null;
+if(FIREBASE_READY){
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+  }catch(e){ console.warn('Firebase failed to start, falling back to local-only mode:', e); }
+}
+
+// The one email that gets admin (write/delete-anything) powers — must
+// match request.auth.token.email == '...' in your Firestore rules exactly.
+const ADMIN_EMAIL = 'keketsyorgabriel@gmail.com';
+
+</script>
+<script>
+const CONFIG = {
+  siteName: "The Football Post",   // <-- change the whole site's name here, nowhere else needed
+  copyrightYear: 2026,        // change this each year, or leave autoYear on below
+  autoYear: true              // if true, footer year updates itself automatically
+};
+
+const CATEGORY_LABELS = { club: "Club", national: "National Team", transfers: "Transfers" };
+
+/* =========================================================
+   SAMPLE POSTS — replace with your own. Each post:
+   id, category, title, snippet, image, imageAlt, date (ISO),
+   trending (bool), body (array of paragraph/heading strings)
+   ========================================================= */
+const STORAGE_KEY = "footy-inform-posts-v1";
+
+const SAMPLE_POSTS = [
+  {
+    id: "p1", category: "transfers", trending: true,
+    title: "Ironbridge United close in on club-record deal for winger",
+    snippet: "The Championship-chasing side are one medical away from smashing their transfer ceiling for a 22-year-old wide man.",
+    image: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200&auto=format&fit=crop",
+    imageAlt: "Football players challenging for the ball during a match",
+    date: "2026-07-09",
+    body: [
+      "Ironbridge United are closing in on what would become the club's record signing, with a fee understood to be in the region of £14m plus add-ons agreed in principle.",
+      "## What's driving the deal",
+      "The winger managed 11 goals and 9 assists last season, and the club's recruitment team have reportedly tracked him since he was 19.",
+      "A medical is expected early next week, with the move likely to be confirmed before the transfer window's midpoint."
+    ]
+  },
+  {
+    id: "p2", category: "club", trending: true,
+    title: "Coastal Rovers grind out a gritty away point after late equaliser",
+    snippet: "A stoppage-time header rescued a point on the road, extending the unbeaten run to six matches.",
+    image: "https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=1200&auto=format&fit=crop",
+    imageAlt: "Player heading the ball during a football match",
+    date: "2026-07-08",
+    body: [
+      "Coastal Rovers came from behind to snatch a 1-1 draw in the closing minutes, with the captain rising highest from a corner to level the score.",
+      "## Manager's take",
+      "The head coach praised the squad's resilience after a difficult first half, pointing to fitness levels as a deciding factor late on.",
+      "The result keeps Rovers three points off the top of the table with a game in hand."
+    ]
+  },
+  {
+    id: "p3", category: "national", trending: false,
+    title: "Squad announced for upcoming World Cup qualifiers",
+    snippet: "Two uncapped players make the cut as the manager rings the changes ahead of back-to-back qualifiers.",
+    image: "https://images.unsplash.com/photo-1517927033932-b3d18e61fb3a?q=80&w=1200&auto=format&fit=crop",
+    imageAlt: "National team players training on the pitch",
+    date: "2026-07-06",
+    body: [
+      "The head coach named a 26-man squad on Thursday for the double-header of World Cup qualifiers, handing first call-ups to two uncapped players.",
+      "## Talking points",
+      "The reshuffled midfield reflects a shift toward a more possession-based approach after recent criticism of the team's build-up play.",
+      "The first qualifier kicks off next Friday, with the return leg four days later."
+    ]
+  },
+  {
+    id: "p4", category: "transfers", trending: false,
+    title: "Gossip column: the six names being linked with a January move",
+    snippet: "From a proven goalscorer to a raw teenage prospect — here's who's being talked about this week.",
+    image: "https://images.unsplash.com/photo-1526232761682-d26e03ac148e?q=80&w=1200&auto=format&fit=crop",
+    imageAlt: "Football on the centre spot of a stadium pitch",
+    date: "2026-07-05",
+    body: [
+      "As always, take gossip-column links with a pinch of salt — but here's what's circulating this week among agents and scouts.",
+      "## The headline name",
+      "A proven top-flight goalscorer has reportedly told friends he'd consider a fresh challenge if the right project came along.",
+      "Further down the list, a teenage prospect from the lower leagues continues to attract attention from several bigger clubs' scouting networks."
+    ]
+  },
+  {
+    id: "p5", category: "club", trending: false,
+    title: "Youth academy graduate handed full debut this weekend",
+    snippet: "The 18-year-old midfielder has been in electric form for the reserves and now gets his senior chance.",
+    image: "https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?q=80&w=1200&auto=format&fit=crop",
+    imageAlt: "Young football player controlling the ball",
+    date: "2026-07-03",
+    body: [
+      "An academy graduate will make his first senior start this weekend after a string of impressive performances for the club's reserve side.",
+      "## A long road",
+      "The midfielder joined the academy at age eight and has progressed through every age group, captaining the under-18s to a league title last season.",
+      "The manager described him as ready, adding that opportunities like this are exactly what the academy is built for."
+    ]
+  },
+  {
+    id: "p6", category: "national", trending: false,
+    title: "Veteran defender confirms international retirement after 94 caps",
+    snippet: "A near-two-decade international career comes to a close after this summer's tournament.",
+    image: "https://images.unsplash.com/photo-1543326727-cf6c39e8f84c?q=80&w=1200&auto=format&fit=crop",
+    imageAlt: "Veteran football player on the pitch during a national team match",
+    date: "2026-06-30",
+    body: [
+      "The long-serving defender confirmed his international retirement in a statement on Tuesday, closing the book on a 94-cap career spanning three tournament cycles.",
+      "## Legacy",
+      "He captained the side to a semi-final finish and is widely regarded as one of the most consistent defenders of his generation.",
+      "The federation confirmed a testimonial match will be arranged later this year."
+    ]
+  }
+];
+
+/* =========================================================
+   PERSISTENCE
+   - If Firebase is configured: posts live in Firestore and every
+     visitor sees the same list, updated live.
+   - If not: posts are saved to this browser's local storage only
+     (survives refresh, but nobody else sees them).
+   ========================================================= */
+function loadLocalPosts(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed) && parsed.length) return parsed;
+    }
+  }catch(e){ /* storage unavailable or corrupted — fall back to sample posts */ }
+  return null;
+}
+function saveLocalPosts(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(posts)); }
+  catch(e){ console.warn('Could not save posts to this browser:', e); }
+}
+
+let posts = FIREBASE_READY ? [] : (loadLocalPosts() || SAMPLE_POSTS.slice());
+let firebaseHasLoaded = false;
+
+function startPostsFeed(){
+  if(!FIREBASE_READY) return;
+  db.collection('posts').orderBy('date','desc').onSnapshot(
+    snapshot=>{
+      firebaseHasLoaded = true;
+      posts = snapshot.empty ? [] : snapshot.docs.map(d=>({ id:d.id, ...d.data() }));
+      buildTicker();
+      renderFeed();
+      // if the article view is currently open, refresh its read-status line too
+      if(!document.getElementById('articleView').hidden && currentOpenArticleId){
+        refreshReadStatusUI(currentOpenArticleId);
+      }
+    },
+    err=>{
+      console.warn('Could not reach the shared database, using this browser\'s local posts instead:', err);
+      posts = loadLocalPosts() || SAMPLE_POSTS.slice();
+      buildTicker();
+      renderFeed();
+    }
+  );
+}
+
+function addPost(newPost){
+  if(FIREBASE_READY){
+    db.collection('posts').add(newPost).catch(err=>alert('Could not publish — check your Firebase setup.\n\n'+err.message));
+  } else {
+    posts.unshift({ id: 'p' + Date.now(), ...newPost });
+    saveLocalPosts();
+    buildTicker();
+    renderFeed();
+  }
+}
+
+function updatePost(id, updatedFields){
+  if(FIREBASE_READY){
+    db.collection('posts').doc(id).update(updatedFields).catch(err=>alert('Could not save changes — check your Firebase setup.\n\n'+err.message));
+  } else {
+    const idx = posts.findIndex(p=>p.id===id);
+    if(idx > -1) posts[idx] = { ...posts[idx], ...updatedFields };
+    saveLocalPosts();
+    buildTicker();
+    renderFeed();
+  }
+}
+
+function deletePost(id){
+  if(!confirm('Delete this post? This cannot be undone.')) return;
+  if(FIREBASE_READY){
+    db.collection('posts').doc(id).delete().catch(err=>alert('Could not delete: '+err.message));
+  } else {
+    posts = posts.filter(p=>p.id!==id);
+    saveLocalPosts();
+    buildTicker();
+    renderFeed();
+  }
+  showFeed();
+}
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let state = { category: "all", sort: "home" };
+
+/* =========================================================
+   SHARED DATE / TIME HELPERS
+   ========================================================= */
+// The app (Flutter/cloud_firestore) can save date-like fields as Firestore
+// Timestamp objects, while this site saves them as ISO strings. Firestore's
+// web SDK hands those back as objects with a .toDate() method, not strings —
+// calling string methods on one throws and silently breaks the whole feed
+// render. This normalizes any of those shapes into a real JS Date first.
+function toJSDate(value){
+  if(value === null || value === undefined) return new Date(NaN);
+  if(value instanceof Date) return value;
+  if(typeof value === 'string'){
+    return value.includes('T') ? new Date(value) : new Date(value+'T00:00:00');
+  }
+  if(typeof value.toDate === 'function') return value.toDate(); // Firestore Timestamp
+  if(typeof value.seconds === 'number') return new Date(value.seconds*1000); // plain {seconds,nanoseconds}
+  return new Date(value);
+}
+
+function fmtDate(iso){
+  const d = toJSDate(iso);
+  if(isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function timeAgo(iso){
+  const d = toJSDate(iso);
+  if(isNaN(d.getTime())) return 'Just now';
+  const seconds = Math.floor((Date.now() - d.getTime()) / 1000);
+  if(seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if(minutes < 60) return `${minutes} minute${minutes===1?'':'s'} ago`;
+  const hours = Math.floor(minutes / 60);
+  if(hours < 24) return `${hours} hour${hours===1?'':'s'} ago`;
+  const days = Math.floor(hours / 24);
+  if(days < 7) return `${days} day${days===1?'':'s'} ago`;
+  const weeks = Math.floor(days / 7);
+  if(days < 30) return `${weeks} week${weeks===1?'':'s'} ago`;
+  const months = Math.floor(days / 30);
+  if(days < 365) return `${months} month${months===1?'':'s'} ago`;
+  const years = Math.floor(days / 365);
+  return `${years} year${years===1?'':'s'} ago`;
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+</script>
+<script>
+/* =========================================================
+   ADMIN GATE — regular readers never see "Admin," "+ New Post,"
+   or any delete controls at all. To reach admin mode yourself,
+   open the site with #admin on the end of the URL, e.g.:
+     https://gkstudioshq.github.io/FootyInform/#admin
+   Bookmark that link for yourself — that's your private way in.
+   Once you sign in there, the site remembers you (Firebase keeps
+   you signed in), so you'll see the admin controls on later visits
+   automatically, even without the #admin link. Readers who don't
+   know that link only ever see the plain reading view.
+   In local-only mode (no Firebase configured yet) there's no real
+   risk either way, so the controls just stay visible with no login.
+   ========================================================= */
+const openWriterBtn = document.getElementById('openWriter');
+const sidebarWriteBtn = document.getElementById('sidebarWrite');
+const openDashboardBtn = document.getElementById('openDashboard');
+const adminBtn = document.getElementById('adminBtn');
+const adminPanel = document.getElementById('adminPanel');
+
+function isAdminUrl(){
+  return location.hash.replace('#','').split('&').includes('admin');
+}
+function setWriteControlsVisible(visible){
+  openWriterBtn.hidden = !visible;
+  sidebarWriteBtn.hidden = !visible;
+  openDashboardBtn.hidden = !visible;
+}
+
+// Any signed-in Firebase user (reader OR admin) — used to gate
+// likes/comments, exactly like AuthService().currentUser in the app.
+function currentUser(){
+  if(!FIREBASE_READY) return null;
+  try{ return firebase.auth().currentUser; }catch(e){ return null; }
+}
+function isSignedIn(){ return !!currentUser(); }
+
+// Admin specifically — the one email your Firestore rules give full
+// write/delete access to.
+function isAdmin(){
+  if(!FIREBASE_READY) return true; // local-only mode: no backend to protect
+  const user = currentUser();
+  return !!(user && user.email === ADMIN_EMAIL);
+}
+function setAdminOnlyUiVisible(visible){
+  adminBtn.hidden = !visible;
+  document.getElementById('modeBadge').hidden = !visible;
+  document.getElementById('footerAdminNote').hidden = !visible;
+}
+
+if(FIREBASE_READY){
+  setWriteControlsVisible(false);
+  setAdminOnlyUiVisible(isAdminUrl());
+  try{
+    firebase.auth().onAuthStateChanged(user=>{
+      setWriteControlsVisible(isAdmin());
+      setAdminOnlyUiVisible(isAdmin() || isAdminUrl());
+      adminBtn.textContent = isAdmin() ? 'Sign out' : 'Admin';
+      renderSidebarAccount();
+      // an article may be open with stale like/comment permission state
+      if(!document.getElementById('articleView').hidden && currentOpenArticleId){
+        refreshArticleAuthState();
+      }
+      // run whatever the reader was trying to do before we asked them to sign in
+      if(user && pendingSignedInAction){
+        const action = pendingSignedInAction;
+        pendingSignedInAction = null;
+        action();
+      }
+    });
+  }catch(e){
+    // If Firebase Auth fails to start (blocked by a browser extension, network
+    // issue, etc.) admin sign-in just won't work — but this must not stop the
+    // rest of the page (in particular, loading articles further down) from running.
+    console.warn('Firebase Auth failed to start — sign-in disabled, articles will still load:', e);
+  }
+} else {
+  setWriteControlsVisible(true);
+  setAdminOnlyUiVisible(false); // local-only mode: nothing to log into, badge/note not relevant to readers either
+}
+
+adminBtn.addEventListener('click', ()=>{
+  if(!FIREBASE_READY) return;
+  if(isAdmin()){
+    firebase.auth().signOut();
+    return;
+  }
+  document.getElementById('adminError').textContent = '';
+  adminPanel.hidden = false;
+});
+document.getElementById('adminCancel').addEventListener('click', ()=> adminPanel.hidden = true);
+document.getElementById('adminSubmit').addEventListener('click', ()=>{
+  const email = document.getElementById('admin_email').value.trim();
+  const pass = document.getElementById('admin_pass').value;
+  const errBox = document.getElementById('adminError');
+  errBox.textContent = '';
+  firebase.auth().signInWithEmailAndPassword(email, pass)
+    .then(()=>{
+      adminPanel.hidden = true;
+      document.getElementById('admin_pass').value = '';
+    })
+    .catch(err=>{ errBox.textContent = 'Sign-in failed — check the email and password.'; });
+});
+
+/* =========================================================
+   READER SIGN-IN / SIGN-UP — matches the app's drawer "Sign In —
+   To like and comment on articles" tile. Same underlying Firebase
+   email/password auth as the admin panel above; the only difference
+   is this modal also lets a brand-new reader CREATE an account
+   (createUserWithEmailAndPassword), and it's reachable from the
+   sidebar instead of being admin-only.
+   ========================================================= */
+let authModalMode = 'signin'; // 'signin' | 'signup'
+let pendingSignedInAction = null; // re-run automatically once sign-in succeeds
+
+function renderSidebarAccount(){
+  const box = document.getElementById('sidebarAccount');
+  if(!box) return;
+  if(!FIREBASE_READY){
+    box.innerHTML = '';
+    return;
+  }
+  const user = currentUser();
+  if(user){
+    box.innerHTML = `
+      <button class="sidebar-account" id="sidebarAccountBtn">
+        <svg class="acct-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg>
+        <span class="acct-text">
+          <span class="acct-main">${escapeHtml(user.email || 'Signed in')}</span>
+          <span class="acct-sub">Tap to sign out</span>
+        </span>
+      </button>`;
+    document.getElementById('sidebarAccountBtn').addEventListener('click', ()=>{
+      firebase.auth().signOut();
+      closeSidebar();
+    });
+  } else {
+    box.innerHTML = `
+      <button class="sidebar-account" id="sidebarAccountBtn">
+        <svg class="acct-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+        <span class="acct-text">
+          <span class="acct-main">Sign In</span>
+          <span class="acct-sub">To like and comment on articles</span>
+        </span>
+      </button>`;
+    document.getElementById('sidebarAccountBtn').addEventListener('click', ()=>{
+      closeSidebar();
+      openAuthModal();
+    });
+  }
+}
+
+function openAuthModal(mode){
+  if(!FIREBASE_READY){
+    alert('Sign-in needs the shared backend to be configured — see the note in js/firebase-config.js.');
+    return;
+  }
+  authModalMode = mode || 'signin';
+  document.getElementById('authError').textContent = '';
+  document.getElementById('auth_email').value = '';
+  document.getElementById('auth_pass').value = '';
+  updateAuthModalMode();
+  document.getElementById('authOverlay').style.display = 'block';
+  document.getElementById('authModal').hidden = false;
+  document.getElementById('auth_email').focus();
+}
+function closeAuthModal(){
+  document.getElementById('authOverlay').style.display = 'none';
+  document.getElementById('authModal').hidden = true;
+  pendingSignedInAction = null;
+}
+function updateAuthModalMode(){
+  const signUp = authModalMode === 'signup';
+  document.getElementById('authTitle').textContent = signUp ? 'Create your account' : 'Sign in';
+  document.getElementById('authSub').textContent = signUp
+    ? 'Takes a few seconds — lets you like and comment on articles.'
+    : 'Sign in to like and comment on articles.';
+  document.getElementById('authSubmit').textContent = signUp ? 'Create account' : 'Sign in';
+  document.getElementById('authSwitchText').textContent = signUp ? 'Already have an account?' : "Don't have an account?";
+  document.getElementById('authSwitchBtn').textContent = signUp ? 'Sign in' : 'Create one';
+}
+
+document.getElementById('authOverlay').addEventListener('click', closeAuthModal);
+document.getElementById('authCancel').addEventListener('click', closeAuthModal);
+document.getElementById('authSwitchBtn').addEventListener('click', ()=>{
+  authModalMode = authModalMode === 'signup' ? 'signin' : 'signup';
+  document.getElementById('authError').textContent = '';
+  updateAuthModalMode();
+});
+document.getElementById('authSubmit').addEventListener('click', ()=>{
+  const email = document.getElementById('auth_email').value.trim();
+  const pass = document.getElementById('auth_pass').value;
+  const errBox = document.getElementById('authError');
+  errBox.textContent = '';
+  if(!email || !pass){ errBox.textContent = 'Enter an email and password.'; return; }
+
+  const method = authModalMode === 'signup'
+    ? firebase.auth().createUserWithEmailAndPassword(email, pass)
+    : firebase.auth().signInWithEmailAndPassword(email, pass);
+
+  method
+    .then(()=>{ closeAuthModal(); })
+    .catch(err=>{
+      if(err.code === 'auth/email-already-in-use'){
+        errBox.textContent = 'That email already has an account — try signing in instead.';
+      } else if(err.code === 'auth/weak-password'){
+        errBox.textContent = 'Password should be at least 6 characters.';
+      } else if(err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential'){
+        errBox.textContent = 'Incorrect email or password.';
+      } else {
+        errBox.textContent = 'Something went wrong — try again.';
+      }
+    });
+});
+
+// Used by likes.js / comments.js: run `action` if the reader is already
+// signed in; otherwise pop the sign-in modal and remember to run `action`
+// automatically the moment sign-in succeeds.
+function withSignIn(action){
+  if(isSignedIn()){ action(); return; }
+  pendingSignedInAction = action;
+  openAuthModal('signin');
+}
+
+</script>
+<script>
+/* =========================================================
+   LIKES
+   Firebase mode (FIREBASE_READY): requires sign-in, matching the app.
+   One like per ACCOUNT — `likedBy` (array of uid) and `likes` (count)
+   are written together in a single update, exactly matching the
+   Firestore rule that only allows a +1/uid-add or -1/uid-remove pair,
+   never one field without the other.
+   Local-only mode (no Firebase configured): no accounts exist at all,
+   so likes fall back to one-per-browser via localStorage, same as
+   before — there's nothing to "sign in" to in that mode.
+   ========================================================= */
+const LIKED_POSTS_KEY = 'footy-inform-liked-posts'; // local-only mode fallback only
+function getLocalLikedPostIds(){
+  try{
+    const raw = localStorage.getItem(LIKED_POSTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function saveLocalLikedPostIds(ids){
+  try{ localStorage.setItem(LIKED_POSTS_KEY, JSON.stringify(ids)); }catch(e){}
+}
+
+function isPostLikedByViewer(post){
+  if(FIREBASE_READY){
+    const user = currentUser();
+    if(!user) return false;
+    return Array.isArray(post.likedBy) && post.likedBy.includes(user.uid);
+  }
+  return getLocalLikedPostIds().includes(post.id);
+}
+
+function doToggleLike(post){
+  const alreadyLiked = isPostLikedByViewer(post);
+
+  if(FIREBASE_READY){
+    const user = currentUser();
+    if(!user) return; // shouldn't happen — caller already gated via withSignIn
+    const delta = alreadyLiked ? -1 : 1;
+    const newLikedBy = alreadyLiked
+      ? (post.likedBy || []).filter(uid => uid !== user.uid)
+      : [...(post.likedBy || []), user.uid];
+    // Reflect immediately in local state so the UI updates without waiting
+    // on the round-trip, then persist both fields together.
+    post.likes = Math.max(0, (post.likes || 0) + delta);
+    post.likedBy = newLikedBy;
+    db.collection('posts').doc(post.id).update({
+      likes: firebase.firestore.FieldValue.increment(delta),
+      likedBy: alreadyLiked
+        ? firebase.firestore.FieldValue.arrayRemove(user.uid)
+        : firebase.firestore.FieldValue.arrayUnion(user.uid)
+    }).catch(err=>{
+      console.warn('Could not update like:', err);
+      // roll back the optimistic local change on failure
+      post.likes = Math.max(0, post.likes - delta);
+      post.likedBy = alreadyLiked ? [...post.likedBy, user.uid] : post.likedBy.filter(uid=>uid!==user.uid);
+      syncLikeButtonsFor(post);
+    });
+  } else {
+    const delta = alreadyLiked ? -1 : 1;
+    post.likes = Math.max(0, (post.likes || 0) + delta);
+    const likedIds = getLocalLikedPostIds();
+    saveLocalLikedPostIds(alreadyLiked ? likedIds.filter(x=>x!==post.id) : [...likedIds, post.id]);
+    saveLocalPosts();
+  }
+
+  syncLikeButtonsFor(post);
+}
+
+// Updates every like button currently on screen for this post (the
+// homepage card AND the open article view, if either is showing it) so
+// a like made in one place is reflected in the other immediately.
+function syncLikeButtonsFor(post){
+  const liked = isPostLikedByViewer(post);
+  const count = post.likes || 0;
+
+  const cardBtn = document.querySelector(`.card-h-like[data-id="${post.id}"]`);
+  if(cardBtn){
+    cardBtn.classList.toggle('liked', liked);
+    cardBtn.querySelector('.heart').textContent = liked ? '♥' : '♡';
+    cardBtn.querySelector('.like-num').textContent = count;
+  }
+  const articleBtn = document.getElementById('likeBtn');
+  if(articleBtn && articleBtn.dataset.id === post.id){
+    articleBtn.classList.toggle('liked', liked);
+    articleBtn.querySelector('.heart').textContent = liked ? '♥' : '♡';
+    articleBtn.querySelector('#likeCount').textContent = count;
+  }
+}
+
+// Article-view like button.
+function toggleLike(post){
+  withSignIn(()=> doToggleLike(post));
+}
+
+// Homepage-card like button. Stops the click from also opening the article.
+function handleCardLike(e, postId){
+  e.preventDefault();
+  e.stopPropagation();
+  const post = posts.find(p=>p.id===postId);
+  if(!post) return;
+  withSignIn(()=> doToggleLike(post));
+}
+
+</script>
+<script>
+/* =========================================================
+   COMMENTS
+   Requires sign-in to post, matching /posts/{id}/comments rules:
+   userId/userEmail must match the signed-in account, text 1–1000
+   chars, createdAt must be the server timestamp. Only the comment's
+   own author or the admin can delete it; nobody can edit one after
+   posting. Local-only mode (no Firebase) doesn't support comments —
+   there's no shared place to store them, so the compose box explains
+   that instead of pretending to work.
+   ========================================================= */
+let commentsUnsubscribe = null;
+
+function stopCommentsListener(){
+  if(commentsUnsubscribe){ commentsUnsubscribe(); commentsUnsubscribe = null; }
+}
+
+function startCommentsListener(postId){
+  stopCommentsListener();
+  if(!FIREBASE_READY) return;
+  commentsUnsubscribe = db.collection('posts').doc(postId).collection('comments')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(
+      snapshot=>{
+        const comments = snapshot.docs.map(d=>({ id:d.id, ...d.data() }));
+        renderCommentList(comments);
+      },
+      err=> console.warn('Could not load comments:', err)
+    );
+}
+
+function renderCommentList(comments){
+  const list = document.getElementById('commentList');
+  const countEl = document.getElementById('commentCount');
+  if(!list) return;
+  countEl.textContent = comments.length;
+
+  if(!comments.length){
+    list.innerHTML = `<div class="comment-empty">No comments yet — be the first.</div>`;
+    return;
+  }
+
+  const user = currentUser();
+  list.innerHTML = comments.map(c=>{
+    const canDelete = user && (user.uid === c.userId || isAdmin());
+    return `
+      <div class="comment-item" data-id="${c.id}">
+        <div class="comment-head">
+          <span class="comment-author">${escapeHtml(c.userEmail || 'Anonymous')}</span>
+          <span class="comment-time">${commentTimeAgo(c.createdAt)}</span>
+        </div>
+        <div class="comment-text">${escapeHtml(c.text || '')}</div>
+        ${canDelete ? `<button class="comment-del" data-id="${c.id}">Delete</button>` : ''}
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('.comment-del').forEach(btn=>{
+    btn.addEventListener('click', ()=> deleteComment(currentOpenArticleId, btn.dataset.id));
+  });
+}
+
+// createdAt is a Firestore server timestamp — null for an instant right
+// after the optimistic local render, before the server has responded.
+function commentTimeAgo(createdAt){
+  if(!createdAt || typeof createdAt.toDate !== 'function') return 'Just now';
+  return timeAgo(createdAt.toDate());
+}
+
+function renderCommentComposeArea(){
+  const box = document.getElementById('commentComposeArea');
+  if(!box) return;
+  if(!FIREBASE_READY){
+    box.innerHTML = `<div class="comment-signin-hint">Comments need the shared backend to be configured.</div>`;
+    return;
+  }
+  if(!isSignedIn()){
+    box.innerHTML = `
+      <div class="comment-signin-hint">
+        <span>Sign in to leave a comment.</span>
+        <button class="write-btn" id="commentSignInBtn">Sign In</button>
+      </div>`;
+    document.getElementById('commentSignInBtn').addEventListener('click', ()=> openAuthModal('signin'));
+    return;
+  }
+  box.innerHTML = `
+    <div class="comment-compose">
+      <textarea id="commentInput" maxlength="1000" placeholder="Share your thoughts..."></textarea>
+      <div class="compose-foot">
+        <span class="char-hint" id="commentCharHint">0 / 1000</span>
+        <button class="publish-btn" id="commentSubmitBtn" style="padding:8px 16px;font-size:13px;">Post comment</button>
+      </div>
+    </div>`;
+  const input = document.getElementById('commentInput');
+  input.addEventListener('input', ()=>{
+    document.getElementById('commentCharHint').textContent = `${input.value.length} / 1000`;
+  });
+  document.getElementById('commentSubmitBtn').addEventListener('click', submitComment);
+}
+
+function submitComment(){
+  const input = document.getElementById('commentInput');
+  const text = input.value.trim();
+  if(!text || !currentOpenArticleId) return;
+  const user = currentUser();
+  if(!user) return;
+
+  const postRef = db.collection('posts').doc(currentOpenArticleId);
+  const commentRef = postRef.collection('comments').doc();
+  const batch = db.batch();
+  batch.set(commentRef, {
+    userId: user.uid,
+    userEmail: user.email || 'Anonymous',
+    text: text,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  batch.update(postRef, {
+    commentCount: firebase.firestore.FieldValue.increment(1)
+  });
+
+  const submitBtn = document.getElementById('commentSubmitBtn');
+  if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Posting…'; }
+
+  batch.commit()
+    .then(()=>{
+      input.value = '';
+      document.getElementById('commentCharHint').textContent = '0 / 1000';
+    })
+    .catch(err=>{
+      console.warn('Could not post comment:', err);
+      alert('Could not post your comment — try again.');
+    })
+    .finally(()=>{
+      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = 'Post comment'; }
+    });
+}
+
+function deleteComment(postId, commentId){
+  if(!postId) return;
+  if(!confirm('Delete this comment?')) return;
+  db.collection('posts').doc(postId).collection('comments').doc(commentId).delete()
+    .catch(err=>{ console.warn('Could not delete comment:', err); alert('Could not delete this comment.'); });
+}
+
+// Called when auth state changes while an article is open, so the
+// compose box and delete buttons reflect the new sign-in state right away.
+function refreshArticleAuthState(){
+  renderCommentComposeArea();
+}
+
+</script>
+<script>
+let carouselTimer = null;
+function stopCarousel(){
+  if(carouselTimer){ clearInterval(carouselTimer); carouselTimer = null; }
+}
+
+function cardHtml(p){
+  const readBadge = p.readAt ? `<div class="read-badge">Read ${timeAgo(p.readAt)}</div>` : '<span></span>';
+  const isLiked = isPostLikedByViewer(p);
+  const likeCount = p.likes || 0;
+  const commentCount = p.commentCount || 0;
+  return `
+    <a class="card-h" href="#" data-id="${p.id}">
+      <div class="card-h-flow">
+        <img class="card-h-img" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
+        <div class="card-h-meta">
+          <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
+          <span class="dot">&middot;</span>
+          <span>${fmtDate(p.date)}</span>
+        </div>
+        <h3>${escapeHtml(p.title)}</h3>
+        <span class="snippet-h"> — ${escapeHtml(p.snippet)}</span>
+      </div>
+      <div class="card-h-foot">
+        ${readBadge}
+        <div class="card-h-actions">
+          <span class="card-h-comment"><span class="bubble">💬</span>${commentCount}</span>
+          <button type="button" class="card-h-like ${isLiked?'liked':''}" data-id="${p.id}" aria-label="${isLiked?'Unlike':'Like'} this post" onclick="handleCardLike(event,'${p.id}')">
+            <span class="heart">${isLiked?'♥':'♡'}</span><span class="like-num">${likeCount}</span>
+          </button>
+        </div>
+      </div>
+    </a>`;
+}
+
+function attachCardHandlers(container){
+  container.querySelectorAll('.card-h').forEach(card=>{
+    card.addEventListener('click', (e)=>{
+      if(e.target.closest('.card-h-like')) return; // like button handles its own click
+      e.preventDefault();
+      openArticle(card.dataset.id);
+    });
+  });
+}
+
+function buildCarouselHtml(list){
+  if(!list.length) return '';
+  return `
+    <div class="trending-carousel">
+      <div class="trending-track">
+        ${list.map((p,i)=>`
+          <a href="#" class="trending-slide ${i===0?'active':''}" data-id="${p.id}" style="background-image:url('${p.image}')">
+            <div class="trending-slide-overlay">
+              <span class="badge">TRENDING</span>
+              <h3>${escapeHtml(p.title)}</h3>
+            </div>
+          </a>`).join('')}
+      </div>
+      ${list.length>1 ? `<div class="trending-dots">
+        ${list.map((_,i)=>`<span class="trending-dot ${i===0?'active':''}"></span>`).join('')}
+      </div>` : ''}
+    </div>`;
+}
+
+function startCarousel(count){
+  if(count<=1) return;
+  let idx = 0;
+  carouselTimer = setInterval(()=>{
+    const slides = document.querySelectorAll('.trending-slide');
+    const dots = document.querySelectorAll('.trending-dot');
+    if(!slides.length){ stopCarousel(); return; }
+    slides[idx].classList.remove('active');
+    dots[idx]?.classList.remove('active');
+    idx = (idx+1) % slides.length;
+    slides[idx].classList.add('active');
+    dots[idx]?.classList.add('active');
+  }, 5000);
+}
+
+// Reader-facing empty state for the feed. While Firestore hasn't sent its
+// first snapshot yet, this is "loading", not "empty" — so readers should
+// never see "no articles" or an admin-only "+ New Post" hint at that point.
+function feedEmptyMessage(fallback){
+  if(FIREBASE_READY && !firebaseHasLoaded) return 'Loading articles…';
+  if(isAdmin()) return 'No posts in this category yet. Use "+ New Post" to add the first one.';
+  return fallback;
+}
+
+function renderFeed(){
+  const feed = document.getElementById('feed');
+  const note = document.getElementById('filterNote');
+  stopCarousel();
+  let list = posts.slice();
+
+  if(state.category !== 'all'){
+    list = list.filter(p=>p.category===state.category);
+    note.hidden = false;
+    note.innerHTML = `Showing <b style="color:var(--chalk)">${CATEGORY_LABELS[state.category]}</b> only &middot; <button id="clearFilter">show all</button>`;
+    document.getElementById('clearFilter').addEventListener('click', ()=>{
+      setCategory('all');
+    });
+  } else {
+    note.hidden = true;
+  }
+
+  if(state.sort === 'home'){
+    const trendList = posts.filter(p=>p.trending).sort((a,b)=> toJSDate(b.date)-toJSDate(a.date));
+    list.sort((a,b)=> (b.trending - a.trending) || (toJSDate(b.date)-toJSDate(a.date)));
+
+    let html = buildCarouselHtml(trendList);
+    if(list.length){
+      html += `<div class="section-label">Latest Stories</div>`;
+      html += list.map(p=>cardHtml(p)).join('');
+    } else if(!trendList.length){
+      html += `<div class="empty-state">${feedEmptyMessage('No articles yet — check back soon.')}</div>`;
+    }
+    feed.innerHTML = html;
+    attachCardHandlers(feed);
+    feed.querySelectorAll('.trending-slide').forEach(slide=>{
+      slide.addEventListener('click', (e)=>{
+        e.preventDefault();
+        openArticle(slide.dataset.id);
+      });
+    });
+    if(trendList.length) startCarousel(trendList.length);
+    return;
+  }
+
+  // state.sort === 'trendingOnly' — only posts marked "trending" in the
+  // dashboard, no carousel, newest first. Mirrors the app's Trending tab.
+  list = list.filter(p=>p.trending);
+  list.sort((a,b)=> toJSDate(b.date)-toJSDate(a.date));
+
+  if(list.length === 0){
+    feed.innerHTML = `<div class="empty-state">${feedEmptyMessage('No trending articles yet.')}</div>`;
+    return;
+  }
+
+  feed.innerHTML = list.map(p=>cardHtml(p)).join('');
+  attachCardHandlers(feed);
+}
+
+/* =========================================================
+   SEARCH — same word-prefix matching used in the app: a word has to
+   START WITH the query, not just contain it anywhere. That's what stops
+   "reach" or "coach" from matching a search for "ch", while "Chelsea" or
+   "Championship" still match correctly. Checks title, snippet, category,
+   and tags (so team/player tags set in the writer form are searchable).
+   ========================================================= */
+function wordStartsWith(text, query){
+  if(!text) return false;
+  const words = String(text).toLowerCase().split(/[^a-z0-9]+/);
+  return words.some(w=> w.startsWith(query));
+}
+function matchesSearch(post, query){
+  const tagsText = Array.isArray(post.tags) ? post.tags.join(' ') : (post.tags || '');
+  return wordStartsWith(post.title, query) ||
+    wordStartsWith(post.snippet, query) ||
+    wordStartsWith(post.category, query) ||
+    wordStartsWith(tagsText, query);
+}
+function renderSearchResults(){
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  const box = document.getElementById('searchResults');
+  if(!query){
+    box.innerHTML = `<div class="empty-state">Search for articles, teams, or players</div>`;
+    return;
+  }
+  const results = posts.filter(p=> matchesSearch(p, query));
+  if(!results.length){
+    box.innerHTML = `<div class="empty-state">No articles found for &quot;${escapeHtml(query)}&quot;</div>`;
+    return;
+  }
+  box.innerHTML = results.map(p=>cardHtml(p)).join('');
+  attachCardHandlers(box);
+}
+
+/* =========================================================
+   TICKER
+   ========================================================= */
+function buildTicker(){
+  const items = posts.slice(0,6).map(p=>`<span><b>${CATEGORY_LABELS[p.category].toUpperCase()}</b> — ${escapeHtml(p.title)}</span>`).join('');
+  document.getElementById('tickerTrack').innerHTML = items + items; // duplicate for seamless loop
+}
+
+</script>
+<script>
+/* =========================================================
+   READ TRACKING — every time an article is opened, we stamp
+   "readAt" with the current time and save it to Firestore
+   (or local storage if Firebase isn't configured). That
+   timestamp is what powers the "Read 3 minutes ago" / "Read
+   just now" line on both the homepage card and the article
+   itself, using the same relative-time logic as the post date.
+   A live timer keeps the on-screen text ticking upward while
+   the article stays open, without needing a page refresh.
+   ========================================================= */
+let currentOpenArticleId = null;
+let readStatusTimer = null;
+
+function recordRead(post){
+  const now = new Date().toISOString();
+  post.readAt = now; // reflect immediately in local state
+  if(FIREBASE_READY){
+    db.collection('posts').doc(post.id).update({ readAt: now })
+      .catch(err=> console.warn('Could not save read time:', err));
+  } else {
+    saveLocalPosts();
+  }
+}
+
+function refreshReadStatusUI(id){
+  const p = posts.find(x=>x.id===id);
+  if(!p) return;
+  const statusEl = document.getElementById('readStatus');
+  if(statusEl) statusEl.textContent = p.readAt ? `Read ${timeAgo(p.readAt)}` : 'Read just now';
+}
+
+function stopReadStatusTimer(){
+  if(readStatusTimer){ clearInterval(readStatusTimer); readStatusTimer = null; }
+}
+
+/* Picks "plenty" of related posts for the bottom-of-article widget —
+   same category first (most recent), topped up with other recent
+   posts if the category doesn't have enough on its own. Shown as a
+   single stacked list (not a grid) so it reads the same on phone and
+   desktop, closer to how NYT/Yahoo-style "more stories" lists work. */
+function relatedPostsFor(p, limit = 8){
+  const sameCategory = posts
+    .filter(x => x.id !== p.id && x.category === p.category)
+    .sort((a,b)=> toJSDate(b.date) - toJSDate(a.date));
+  const picked = sameCategory.slice(0, limit);
+  if(picked.length < limit){
+    const usedIds = new Set([p.id, ...picked.map(x=>x.id)]);
+    const filler = posts
+      .filter(x => !usedIds.has(x.id))
+      .sort((a,b)=> toJSDate(b.date) - toJSDate(a.date))
+      .slice(0, limit - picked.length);
+    picked.push(...filler);
+  }
+  return picked;
+}
+
+function relatedCardHtml(p){
+  return `
+    <a class="related-card" href="#" data-id="${p.id}">
+      <img src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
+      <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
+      <h4>${escapeHtml(p.title)}</h4>
+    </a>`;
+}
+
+function attachRelatedCardHandlers(container){
+  container.querySelectorAll('.related-card').forEach(card=>{
+    card.addEventListener('click', (e)=>{
+      e.preventDefault();
+      openArticle(card.dataset.id);
+    });
+  });
+}
+
+function openArticle(id){
+  const p = posts.find(x=>x.id===id);
+  if(!p) return;
+  const bodyHtml = bodyToHtml(p.body);
+  const isLiked = isPostLikedByViewer(p);
+  const likeCount = p.likes || 0;
+  const related = relatedPostsFor(p);
+
+  currentOpenArticleId = id;
+  recordRead(p);
+
+  document.getElementById('articleContent').innerHTML = `
+    <div class="article-meta">
+      <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
+    </div>
+    <h1>${escapeHtml(p.title)}</h1>
+    ${p.subtitle ? `<p class="article-subtitle">${escapeHtml(p.subtitle)}</p>` : ''}
+    <img class="article-hero" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}">
+    ${p.imageAlt ? `<div class="img-caption">${escapeHtml(p.imageAlt)}</div>` : ''}
+    <div class="byline">By <b>${escapeHtml(p.author || 'Footy Post Staff')}</b> &middot; ${fmtDate(p.date)}</div>
+    <div class="read-status" id="readStatus">Read just now</div>
+    <div class="article-body">${bodyHtml}</div>
+    <div class="like-row">
+      <button class="like-btn ${isLiked ? 'liked' : ''}" id="likeBtn" data-id="${id}">
+        <span class="heart">${isLiked ? '♥' : '♡'}</span>
+        <span id="likeCount">${likeCount}</span> ${likeCount===1?'Like':'Likes'}
+      </button>
+    </div>
+    ${isAdmin() ? `
+      <button class="publish-btn" id="editPostBtn" style="margin-top:24px;">Edit this post</button>
+      <button class="cancel-btn" id="deletePostBtn" style="margin-top:24px;margin-left:10px;">Delete this post</button>
+    ` : ''}
+    <div class="comments-section">
+      <div class="comments-heading">
+        <div class="section-label">Comments</div>
+        <span class="count">(<span id="commentCount">0</span>)</span>
+      </div>
+      <div id="commentComposeArea"></div>
+      <div class="comment-list" id="commentList"></div>
+    </div>
+    ${related.length ? `
+      <div class="related-section">
+        <div class="section-label">Read Also</div>
+        <div class="related-grid" id="relatedGrid">
+          ${related.map(relatedCardHtml).join('')}
+        </div>
+      </div>
+    ` : ''}
+  `;
+  const editBtn = document.getElementById('editPostBtn');
+  if(editBtn) editBtn.addEventListener('click', ()=>{ loadPostIntoWriter(p); showWriter(); });
+  const delBtn = document.getElementById('deletePostBtn');
+  if(delBtn) delBtn.addEventListener('click', ()=> deletePost(p.id));
+  const likeBtn = document.getElementById('likeBtn');
+  if(likeBtn) likeBtn.addEventListener('click', ()=> toggleLike(p));
+  const relatedGrid = document.getElementById('relatedGrid');
+  if(relatedGrid) attachRelatedCardHandlers(relatedGrid);
+
+  renderCommentComposeArea();
+  startCommentsListener(id);
+
+  stopReadStatusTimer();
+  readStatusTimer = setInterval(()=> refreshReadStatusUI(id), 15000);
+
+  // reflect the fresh "Read just now" on the homepage card too, next
+  // time the feed is drawn (e.g. when the user hits Back)
+  renderFeed();
+
+  showArticle();
+}
+
+// Body can be either a legacy array (## heading / paragraph strings from
+// the original sample posts) or a plain HTML string (from the rich editor).
+function bodyToHtml(body){
+  if(!body) return '';
+  if(Array.isArray(body)){
+    return body.map(block=> block.startsWith('## ') ? `<h2>${escapeHtml(block.slice(3))}</h2>` : `<p>${escapeHtml(block)}</p>`).join('');
+  }
+  return body;
+}
+
+</script>
+<script>
+/* =========================================================
+   RICH TEXT TOOLBAR
+   ========================================================= */
+document.querySelectorAll('.rich-toolbar button[data-cmd]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.getElementById('f_body_rich').focus();
+    document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+    runSeoCheck();
+  });
+});
+
+let savedBodyRange = null;
+document.getElementById('insertImageBtn').addEventListener('click', ()=>{
+  const sel = window.getSelection();
+  if(sel.rangeCount > 0){
+    const range = sel.getRangeAt(0);
+    const editor = document.getElementById('f_body_rich');
+    savedBodyRange = editor.contains(range.commonAncestorContainer) ? range.cloneRange() : null;
+  }
+  document.getElementById('bodyImageInput').click();
+});
+
+document.getElementById('bodyImageInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const maxW = 900;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+      const editor = document.getElementById('f_body_rich');
+      editor.focus();
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      if(savedBodyRange){
+        sel.addRange(savedBodyRange);
+      } else {
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        sel.addRange(range);
+      }
+      document.execCommand('insertImage', false, dataUrl);
+      runSeoCheck();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+
+/* =========================================================
+   "READ ALSO" INLINE ARTICLE LINKS
+   Lets the writer select text (or place the cursor) in the body
+   editor, pick another published post, and insert a normal-looking
+   link — styled in floodlight gold — that opens that post inside
+   the app-like single-page view when a reader clicks it, instead of
+   navigating to a real URL.
+   ========================================================= */
+let savedLinkRange = null;
+
+function openPostLinkPicker(){
+  const sel = window.getSelection();
+  const editor = document.getElementById('f_body_rich');
+  if(sel.rangeCount > 0){
+    const range = sel.getRangeAt(0);
+    savedLinkRange = editor.contains(range.commonAncestorContainer) ? range.cloneRange() : null;
+  } else {
+    savedLinkRange = null;
+  }
+  document.getElementById('linkPickerSearch').value = '';
+  renderLinkPickerList('');
+  document.getElementById('overlay2').style.display = 'block';
+  document.getElementById('linkPicker').hidden = false;
+  document.getElementById('linkPickerSearch').focus();
+}
+
+function closePostLinkPicker(){
+  document.getElementById('overlay2').style.display = 'none';
+  document.getElementById('linkPicker').hidden = true;
+}
+
+function renderLinkPickerList(query){
+  const list = document.getElementById('linkPickerList');
+  const q = query.trim().toLowerCase();
+  // Don't offer linking an article to itself while editing it.
+  const candidates = posts
+    .filter(p => p.id !== editingPostId)
+    .filter(p => !q || p.title.toLowerCase().includes(q))
+    .slice(0, 30);
+  if(!candidates.length){
+    list.innerHTML = `<div style="font-family:var(--mono);font-size:11px;color:var(--chalk-dim);padding:8px 2px;">No matching articles.</div>`;
+    return;
+  }
+  list.innerHTML = candidates.map(p => `
+    <button type="button" class="link-picker-item" data-id="${p.id}">
+      ${escapeHtml(p.title)}
+      <small>${CATEGORY_LABELS[p.category] || p.category}</small>
+    </button>
+  `).join('');
+  list.querySelectorAll('.link-picker-item').forEach(btn=>{
+    btn.addEventListener('click', ()=> insertPostLink(btn.dataset.id));
+  });
+}
+
+function insertPostLink(postId){
+  const post = posts.find(p=>p.id===postId);
+  if(!post) return;
+
+  const editor = document.getElementById('f_body_rich');
+  editor.focus();
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  if(savedLinkRange){
+    sel.addRange(savedLinkRange);
+  } else {
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false);
+    sel.addRange(range);
+  }
+
+  // If the writer had text selected, keep using it as the link's visible
+  // words (the "buried link" look); otherwise fall back to the target
+  // article's own title so the inserted link never reads as empty.
+  const selectedText = sel.toString().trim();
+  const linkText = selectedText || post.title;
+  const anchorHtml = `<a href="#" class="inline-post-link" data-post-id="${post.id}">${escapeHtml(linkText)}</a>`;
+  document.execCommand('insertHTML', false, anchorHtml);
+  runSeoCheck();
+  closePostLinkPicker();
+}
+
+document.getElementById('insertPostLinkBtn').addEventListener('click', openPostLinkPicker);
+document.getElementById('linkPickerCancel').addEventListener('click', closePostLinkPicker);
+document.getElementById('overlay2').addEventListener('click', closePostLinkPicker);
+document.getElementById('linkPickerSearch').addEventListener('input', (e)=> renderLinkPickerList(e.target.value));
+
+/* =========================================================
+   IMAGE UPLOAD — resized/compressed to a data URL client-side
+   (no file storage backend, so the image travels inside the
+   post itself; kept under ~1200px wide to stay well within
+   Firestore's 1MB-per-document limit).
+   ========================================================= */
+let currentImageDataUrl = null;
+document.getElementById('f_image_file').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const maxW = 1200;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      currentImageDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      const preview = document.getElementById('f_image_preview');
+      preview.src = currentImageDataUrl;
+      preview.hidden = false;
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+/* =========================================================
+   WRITER FORM — shared between "new post" and "edit post"
+   ========================================================= */
+let editingPostId = null;
+
+function resetWriterForm(){
+  editingPostId = null;
+  document.getElementById('writerHeading').textContent = 'Write a new post';
+  document.getElementById('publishBtn').textContent = 'Publish post';
+  ['f_title','f_subtitle','f_meta','f_keyword','f_alt','f_snippet','f_tags'].forEach(id=> document.getElementById(id).value='');
+  document.getElementById('f_author').value = 'Footy Post Staff';
+  document.getElementById('f_body_rich').innerHTML = '';
+  document.getElementById('f_category').value = 'club';
+  document.getElementById('f_trending').checked = false;
+  document.getElementById('f_image_file').value = '';
+  document.getElementById('f_image_preview').hidden = true;
+  currentImageDataUrl = null;
+  runSeoCheck();
+}
+
+function loadPostIntoWriter(post){
+  editingPostId = post.id;
+  document.getElementById('writerHeading').textContent = 'Edit post';
+  document.getElementById('publishBtn').textContent = 'Save changes';
+  document.getElementById('f_title').value = post.title || '';
+  document.getElementById('f_subtitle').value = post.subtitle || '';
+  document.getElementById('f_meta').value = post.metaDescription || post.snippet || '';
+  document.getElementById('f_keyword').value = post.focusKeyword || '';
+  document.getElementById('f_author').value = post.author || 'Footy Post Staff';
+  document.getElementById('f_alt').value = post.imageAlt || '';
+  document.getElementById('f_snippet').value = post.snippet || '';
+  document.getElementById('f_tags').value = Array.isArray(post.tags) ? post.tags.join(', ') : (post.tags || '');
+  document.getElementById('f_category').value = post.category || 'club';
+  document.getElementById('f_trending').checked = !!post.trending;
+  currentImageDataUrl = post.image || null;
+  const preview = document.getElementById('f_image_preview');
+  if(post.image){ preview.src = post.image; preview.hidden = false; } else { preview.hidden = true; }
+  document.getElementById('f_body_rich').innerHTML = bodyToHtml(post.body);
+  runSeoCheck();
+}
+
+/* =========================================================
+   SEO CHECKER
+   ========================================================= */
+const seoFields = ['f_title','f_meta','f_keyword','f_alt','f_snippet'];
+seoFields.forEach(id=> document.getElementById(id).addEventListener('input', runSeoCheck));
+document.getElementById('f_body_rich').addEventListener('input', runSeoCheck);
+
+document.getElementById('f_title').addEventListener('input', (e)=>{
+  document.getElementById('titleCount').textContent = e.target.value.length + ' characters';
+});
+document.getElementById('f_meta').addEventListener('input', (e)=>{
+  document.getElementById('metaCount').textContent = e.target.value.length + ' characters';
+});
+document.getElementById('f_body_rich').addEventListener('input', ()=>{
+  const words = wordCount(document.getElementById('f_body_rich').innerText);
+  document.getElementById('bodyCount').textContent = words + ' words';
+});
+
+function wordCount(str){ return str.trim().split(/\s+/).filter(Boolean).length; }
+
+function runSeoCheck(){
+  const title = document.getElementById('f_title').value.trim();
+  const meta = document.getElementById('f_meta').value.trim();
+  const keyword = document.getElementById('f_keyword').value.trim().toLowerCase();
+  const alt = document.getElementById('f_alt').value.trim();
+  const body = document.getElementById('f_body_rich').innerText.trim();
+  const bodyLower = body.toLowerCase();
+
+  const checks = [];
+
+  checks.push(scoreCheck(
+    title.length >= 40 && title.length <= 60 ? 'good' : (title.length>0 ? 'warn':'bad'),
+    'Title length',
+    `${title.length} characters — aim for 40–60 so it doesn't get cut off in Google.`
+  ));
+
+  checks.push(scoreCheck(
+    keyword && title.toLowerCase().includes(keyword) ? 'good' : 'bad',
+    'Focus keyword in title',
+    keyword ? (title.toLowerCase().includes(keyword) ? 'Found in title.' : 'Not found in title yet.') : 'Set a focus keyword first.'
+  ));
+
+  checks.push(scoreCheck(
+    meta.length >= 120 && meta.length <= 160 ? 'good' : (meta.length>0 ? 'warn':'bad'),
+    'Meta description length',
+    `${meta.length} characters — aim for 120–160.`
+  ));
+
+  checks.push(scoreCheck(
+    keyword && meta.toLowerCase().includes(keyword) ? 'good' : 'warn',
+    'Focus keyword in meta description',
+    keyword && meta.toLowerCase().includes(keyword) ? 'Found in meta description.' : 'Consider working it in naturally.'
+  ));
+
+  const wc = body ? wordCount(body) : 0;
+  checks.push(scoreCheck(
+    wc >= 300 ? 'good' : (wc>0 ? 'warn':'bad'),
+    'Article length',
+    `${wc} words — 300+ tends to rank better for news posts.`
+  ));
+
+  let density = 0;
+  if(keyword && wc>0){
+    const matches = bodyLower.split(keyword).length - 1;
+    density = (matches / wc) * 100;
+  }
+  checks.push(scoreCheck(
+    keyword ? (density>=0.5 && density<=2.5 ? 'good' : 'warn') : 'bad',
+    'Keyword density in article',
+    keyword ? `${density.toFixed(1)}% — aim for roughly 0.5%–2.5%, don't force it.` : 'Set a focus keyword first.'
+  ));
+
+  checks.push(scoreCheck(
+    document.getElementById('f_body_rich').querySelector('h2') ? 'good' : 'warn',
+    'Subheadings',
+    document.getElementById('f_body_rich').querySelector('h2') ? 'At least one subheading found.' : 'Use the "Heading" button in the toolbar to break up the text.'
+  ));
+
+  checks.push(scoreCheck(
+    alt.length > 0 ? 'good' : 'bad',
+    'Image alt text',
+    alt.length>0 ? 'Alt text is set.' : 'Describe the image for accessibility and image search.'
+  ));
+
+  const list = document.getElementById('seoChecks');
+  list.innerHTML = checks.map(c=>`
+    <li><span class="seo-dot" style="background:${dotColor(c.level)}"></span>
+      <span><b>${c.label}</b> — ${c.detail}</span>
+    </li>
+  `).join('');
+
+  const total = checks.reduce((sum,c)=> sum + (c.level==='good'?1:c.level==='warn'?0.5:0), 0);
+  const score = Math.round((total/checks.length)*100);
+  const circle = document.getElementById('seoScoreCircle');
+  const label = document.getElementById('seoScoreLabel');
+  circle.textContent = score;
+  const color = score>=80?'good':score>=50?'warn':'bad';
+  circle.style.borderColor = dotColor(color);
+  circle.style.color = dotColor(color);
+  label.innerHTML = (score>=80?'Looking green — ready to publish':score>=50?'Getting there — a few fixes left':'Needs work before publishing') + '<span>SEO score</span>';
+
+  document.getElementById('publishBtn').disabled = !(title && body && meta);
+  return score;
+}
+function scoreCheck(level,label,detail){ return {level,label,detail}; }
+function dotColor(level){ return level==='good' ? 'var(--good)' : level==='warn' ? 'var(--warn)' : 'var(--bad)'; }
+
+document.getElementById('publishBtn').addEventListener('click', ()=>{
+  const title = document.getElementById('f_title').value.trim();
+  const subtitle = document.getElementById('f_subtitle').value.trim();
+  const meta = document.getElementById('f_meta').value.trim();
+  const snippet = document.getElementById('f_snippet').value.trim() || meta;
+  const bodyHtml = document.getElementById('f_body_rich').innerHTML.trim();
+  const image = currentImageDataUrl || 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?q=80&w=1200&auto=format&fit=crop';
+  const alt = document.getElementById('f_alt').value.trim();
+  const category = document.getElementById('f_category').value;
+  const author = document.getElementById('f_author').value.trim() || 'Footy Post Staff';
+  const trending = document.getElementById('f_trending').checked;
+  const focusKeyword = document.getElementById('f_keyword').value.trim();
+  const tags = document.getElementById('f_tags').value
+    .split(',')
+    .map(t=>t.trim())
+    .filter(Boolean);
+
+  if(!title || !bodyHtml || !meta){ return; }
+
+  const postData = {
+    category, trending, author,
+    title, subtitle, snippet, image, imageAlt: alt, metaDescription: meta, focusKeyword, tags,
+    body: bodyHtml
+  };
+
+  if(editingPostId){
+    updatePost(editingPostId, postData);
+  } else {
+    // Full timestamp (not just the date) so the app can show
+    // "5 minutes ago" / "3 hours ago" style relative times.
+    postData.date = new Date().toISOString();
+    postData.likes = 0;
+    postData.likedBy = [];
+    postData.commentCount = 0;
+    addPost(postData);
+  }
+
+  resetWriterForm();
+  showFeed();
+});
+
+</script>
+<script>
+function renderDashboard(){
+  const box = document.getElementById('dashboardList');
+  if(!posts.length){
+    box.innerHTML = `<div class="empty-state">No posts yet — use "+ New Post" to write your first one.</div>`;
+    return;
+  }
+  const sorted = posts.slice().sort((a,b)=> toJSDate(b.date) - toJSDate(a.date));
+  box.innerHTML = sorted.map(p=>`
+    <div class="dash-row">
+      <img class="dash-thumb" src="${p.image}" alt="">
+      <div class="dash-info">
+        <div class="dash-title">${escapeHtml(p.title)}</div>
+        <div class="dash-meta">${CATEGORY_LABELS[p.category]||p.category} · ${fmtDate(p.date)}</div>
+      </div>
+      <div class="dash-actions">
+        <button class="edit-btn" data-id="${p.id}">Edit</button>
+        <button class="del-btn" data-id="${p.id}">Delete</button>
+      </div>
+    </div>
+  `).join('');
+  box.querySelectorAll('.edit-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const post = posts.find(p=>p.id===btn.dataset.id);
+      if(post){ loadPostIntoWriter(post); showWriter(); }
+    });
+  });
+  box.querySelectorAll('.del-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(!confirm('Delete this post? This cannot be undone.')) return;
+      if(FIREBASE_READY){
+        db.collection('posts').doc(btn.dataset.id).delete().then(renderDashboard).catch(err=>alert('Could not delete: '+err.message));
+      } else {
+        posts = posts.filter(p=>p.id!==btn.dataset.id);
+        saveLocalPosts();
+        buildTicker(); renderFeed(); renderDashboard();
+      }
+    });
+  });
+}
+
+</script>
+<script>
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+const hamburger = document.getElementById('hamburger');
+
+function openSidebar(){
+  sidebar.classList.add('open');
+  overlay.classList.add('show');
+  hamburger.classList.add('active');
+  hamburger.setAttribute('aria-expanded','true');
+}
+function closeSidebar(){
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+  hamburger.classList.remove('active');
+  hamburger.setAttribute('aria-expanded','false');
+}
+hamburger.addEventListener('click', ()=> sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
+overlay.addEventListener('click', closeSidebar);
+document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
+
+function setCategory(cat){
+  state.category = cat;
+  document.querySelectorAll('.nav-item[data-cat]').forEach(n=>n.classList.toggle('active', n.dataset.cat===cat));
+  document.querySelectorAll('.chip[data-cat]').forEach(n=>n.classList.toggle('active', n.dataset.cat===cat));
+  showFeed();
+  renderFeed();
+}
+
+document.querySelectorAll('.nav-item[data-cat]').forEach(el=>{
+  el.addEventListener('click', (e)=>{
+    e.preventDefault();
+    closeSidebar();
+    setCategory(el.dataset.cat);
+  });
+});
+document.querySelector('.nav-item[data-cat="all"]').classList.add('active');
+
+// Category chips — same destinations as the sidebar links, just a faster path
+document.querySelectorAll('.chip[data-cat]').forEach(el=>{
+  el.addEventListener('click', ()=> setCategory(el.dataset.cat));
+});
+
+// Sidebar footer links (Privacy Policy / Terms / About / Contact / Support)
+// — same destinations the app's drawer opens.
+document.querySelectorAll('.nav-item[data-link]').forEach(el=>{
+  el.addEventListener('click', (e)=>{
+    e.preventDefault();
+    closeSidebar();
+    window.open(el.dataset.link, '_blank', 'noopener');
+  });
+});
+
+/* view tabs: Home (carousel + all latest stories) / Trending (only posts
+   marked "trending" in the dashboard) — matches the app's Home/Trending tabs */
+const tabHome = document.getElementById('tabHome');
+const tabTrendingOnly = document.getElementById('tabTrendingOnly');
+
+function activateTab(btn){
+  [tabHome,tabTrendingOnly].forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+tabHome.addEventListener('click', ()=>{ state.sort='home'; activateTab(tabHome); renderFeed(); });
+tabTrendingOnly.addEventListener('click', ()=>{ state.sort='trendingOnly'; activateTab(tabTrendingOnly); renderFeed(); });
+
+/* =========================================================
+   VIEW SWITCHING
+   ========================================================= */
+function hideAllViews(){
+  document.getElementById('feedView').hidden = true;
+  document.getElementById('articleView').hidden = true;
+  document.getElementById('writerView').hidden = true;
+  document.getElementById('dashboardView').hidden = true;
+  document.getElementById('searchView').hidden = true;
+}
+function showFeed(){ hideAllViews(); document.getElementById('feedView').hidden = false; }
+function showArticle(){ hideAllViews(); document.getElementById('articleView').hidden = false; window.scrollTo(0,0); }
+function showWriter(){ hideAllViews(); document.getElementById('writerView').hidden = false; window.scrollTo(0,0); }
+function showDashboard(){ hideAllViews(); document.getElementById('dashboardView').hidden = false; window.scrollTo(0,0); renderDashboard(); }
+function showSearch(){
+  hideAllViews();
+  document.getElementById('searchView').hidden = false;
+  window.scrollTo(0,0);
+  renderSearchResults();
+  document.getElementById('searchInput').focus();
+}
+
+document.getElementById('backToFeed').addEventListener('click', ()=>{ showFeed(); stopReadStatusTimer(); stopCommentsListener(); });
+document.getElementById('openWriter').addEventListener('click', ()=>{ resetWriterForm(); showWriter(); });
+document.getElementById('sidebarWrite').addEventListener('click', ()=>{ closeSidebar(); resetWriterForm(); showWriter(); });
+document.getElementById('backFromWriter').addEventListener('click', showFeed);
+document.getElementById('cancelWriter').addEventListener('click', showFeed);
+document.getElementById('openDashboard').addEventListener('click', showDashboard);
+document.getElementById('backFromDashboard').addEventListener('click', showFeed);
+document.getElementById('backFromSearch').addEventListener('click', showFeed);
+
+// Search bar — opens the real search view.
+document.getElementById('searchBarStub').addEventListener('click', showSearch);
+document.getElementById('searchInput').addEventListener('input', renderSearchResults);
+
+// "Read Also" links buried inside the article body (inserted via the
+// writer's link picker) open that other post in-page instead of
+// navigating anywhere — delegated once here since #articleContent's
+// innerHTML gets replaced on every openArticle() call.
+document.getElementById('articleContent').addEventListener('click', (e)=>{
+  const link = e.target.closest('a.inline-post-link');
+  if(!link) return;
+  e.preventDefault();
+  const targetId = link.dataset.postId;
+  if(targetId) openArticle(targetId);
+});
+
+/* =========================================================
+   FOOTER / BRAND FROM CONFIG
+   ========================================================= */
+document.getElementById('brandMark').innerHTML = CONFIG.siteName.replace(/(\S+)$/, '<em>$1</em>');
+document.getElementById('footerYear').textContent = CONFIG.autoYear ? new Date().getFullYear() : CONFIG.copyrightYear;
+document.getElementById('footerSiteName').textContent = CONFIG.siteName;
+
+document.getElementById('resetContent').addEventListener('click', ()=>{
+  if(FIREBASE_READY){
+    alert('You\'re in shared (live) mode — posts live in Firestore now. Delete individual posts by opening them and using "Delete this post", or manage them from the Firebase console.');
+    return;
+  }
+  if(!confirm('This clears everything you\'ve published in this browser and brings back the 6 sample posts. Continue?')) return;
+  posts = SAMPLE_POSTS.slice();
+  saveLocalPosts();
+  buildTicker();
+  renderFeed();
+  showFeed();
+});
+
+document.getElementById('modeBadge').textContent = FIREBASE_READY ? '● Shared, live' : '● Local only';
+document.getElementById('modeBadge').style.color = FIREBASE_READY ? 'var(--good)' : 'var(--chalk-dim)';
+
+/* =========================================================
+   INSTALLABLE APP (PWA)
+   Needs manifest.json and sw.js sitting next to this file in
+   the same repo — upload all three. Chrome/Edge/Android show the
+   "Install App" button automatically once those are in place;
+   Safari on iPhone/iPad doesn't support this prompt at all — on
+   iOS, visitors add it via Share → "Add to Home Screen" manually,
+   there's no code workaround for that Apple restriction.
+   ========================================================= */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(err=> console.warn('Service worker failed to register:', err));
+  });
+}
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('installBtn').hidden = false;
+});
+document.getElementById('installBtn').addEventListener('click', async ()=>{
+  if(!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  document.getElementById('installBtn').hidden = true;
+});
+window.addEventListener('appinstalled', ()=>{ document.getElementById('installBtn').hidden = true; });
+
+/* =========================================================
+   INIT
+   Each call is isolated so a failure in one (e.g. the ticker or an
+   initial render glitch) can never prevent startPostsFeed() from
+   running — that's the call that actually fetches articles, so it
+   must always fire no matter what else goes wrong here.
+   ========================================================= */
+try{ buildTicker(); }catch(e){ console.error('buildTicker failed:', e); }
+try{ renderFeed(); }catch(e){ console.error('renderFeed failed:', e); }
+try{ runSeoCheck(); }catch(e){ console.error('runSeoCheck failed:', e); }
+try{ renderSidebarAccount(); }catch(e){ console.error('renderSidebarAccount failed:', e); }
+startPostsFeed();
+
+</script>
 </body>
 </html>
