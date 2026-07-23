@@ -61,7 +61,7 @@ button{font-family:inherit;cursor:pointer;}
   transition:border-color .2s, background .2s;
 }
 .hamburger:hover{border-color:var(--floodlight);}
-.hamburger span{width:18px;height:2px;background:var(--chalk);display:block;transition:transform .25s, opacity .2s;}
+.hamburger span{width:18px;height:2px;background:var(--floodlight);display:block;transition:transform .25s, opacity .2s;}
 .hamburger.active span:nth-child(1){transform:translateY(7px) rotate(45deg);}
 .hamburger.active span:nth-child(2){opacity:0;}
 .hamburger.active span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
@@ -368,27 +368,50 @@ main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
 }
 .card-h-comment .bubble{font-size:12px;line-height:1;}
 .card-h-comment,.big-box-comment{cursor:pointer;}
-.card-h-comment.active,.big-box-comment.active{background:rgba(31,79,50,0.18);border-color:#1F4F32;color:#1F4F32;font-weight:700;}
 
-/* ============ INLINE FEED COMMENTS DRAWER ============
-   Opens in normal document flow right under the card that was tapped —
-   NOT a full-screen overlay, NOT a jump to the top of the page. Cards
-   further down the feed just get pushed down and stay visible/scrollable,
-   exactly like an accordion panel. */
-.feed-comments-drawer{
-  background:var(--card-bg);border:1px solid rgba(0,0,0,.06);border-top:none;
-  border-radius:0 0 var(--radius) var(--radius);
-  margin:-12px 0 12px;padding:14px 14px 16px;
-  animation:drawerOpen .18s ease-out;
+/* ============ ARTICLE COMMENTS DRAWER ============
+   Tapping a comment bubble opens the article as normal, then this
+   drawer drops down from just below the topbar and covers only the
+   upper portion of the screen — short enough that the reader can
+   still see the article peeking in below it. A dimmed backdrop sits
+   behind it (tap it, or the ✕, to dismiss); the article itself is
+   never removed from the page, just partly covered while the drawer
+   is open. */
+.comments-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.45);
+  display:flex;justify-content:center;
+  animation:commentsOverlayFade .15s ease-out;
 }
-@keyframes drawerOpen{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
-.feed-comments-drawer .comments-heading{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
-.feed-comments-drawer .comments-heading .section-label{margin:0;font-size:13px;}
-.feed-comments-drawer .close-drawer{
-  margin-left:auto;background:none;border:none;color:var(--chalk-dim);
-  font-family:var(--mono);font-size:16px;line-height:1;cursor:pointer;padding:2px 6px;
+@keyframes commentsOverlayFade{from{opacity:0;}to{opacity:1;}}
+.comments-drawer-panel{
+  width:100%;max-width:640px;
+  background:var(--card-bg);color:var(--ink);
+  margin-top:62px; /* sits just under the sticky topbar, not the very top */
+  max-height:56vh;
+  border-radius:0 0 8px 8px;
+  box-shadow:0 16px 34px rgba(0,0,0,.45);
+  display:flex;flex-direction:column;overflow:hidden;
+  animation:commentsDrawerDown .2s ease-out;
 }
-.feed-comments-drawer .comment-list{display:flex;flex-direction:column;gap:14px;}
+@keyframes commentsDrawerDown{from{transform:translateY(-20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.comments-drawer-panel .comments-heading{display:flex;align-items:center;gap:8px;padding:16px 16px 0;}
+.comments-drawer-panel .comments-heading .section-label{margin:0;font-size:14px;}
+.comments-drawer-panel .close-drawer{
+  margin-left:auto;background:none;border:none;color:var(--ink-dim);
+  font-family:var(--mono);font-size:17px;line-height:1;cursor:pointer;padding:4px 6px;
+}
+.comments-drawer-panel .comment-compose-area{padding:12px 16px 0;flex:none;}
+.comments-drawer-panel .comment-list{padding:12px 16px 16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px;}
+
+/* Compact trigger inside the open article that (re)opens the drawer */
+.article-comments-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:none;border:1px solid var(--line);color:var(--chalk);
+  border-radius:16px;padding:5px 12px;font-family:var(--body);font-size:12.5px;font-weight:600;
+  margin-left:10px;
+}
+.article-comments-btn .bubble{font-size:13px;line-height:1;}
 
 /* ============ TRENDING CAROUSEL ============ */
 .section-label{
@@ -531,8 +554,7 @@ background-repeat:no-repeat;background-position:center;
 }
 .related-section{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);}
 
-/* ============ COMMENTS ============ */
-.comments-section{margin-top:36px;padding-top:24px;border-top:1px solid var(--line);}
+/* ============ COMMENTS (shared styling for the drawer's contents) ============ */
 .comments-heading{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
 .comments-heading .section-label{margin:0;}
 .comments-heading .count{font-family:var(--mono);font-size:12px;color:var(--chalk-dim);}
@@ -1691,11 +1713,10 @@ function handleCardLike(e, postId){
    there's no shared place to store them, so the compose box explains
    that instead of pretending to work.
    ========================================================= */
-// Comment listeners are keyed by their scope element (the full article
-// view's .comments-section, OR an inline feed drawer) so more than one
-// can't fight over the same DOM. Only one listener per postId is normally
-// live at a time, but keying by scope keeps that assumption from ever
-// silently breaking things.
+// Comment listeners are keyed by their scope element (the open comments
+// drawer's panel) so more than one can't fight over the same DOM. Only
+// one listener is normally live at a time, but keying by scope keeps
+// that assumption from ever silently breaking things.
 const commentListeners = new Map(); // scopeEl -> unsubscribe fn
 
 function stopCommentsListener(scopeEl){
@@ -1723,6 +1744,10 @@ function renderCommentList(comments, postId, scopeEl){
   const countEl = scopeEl.querySelector('.comment-count');
   if(!list) return;
   if(countEl) countEl.textContent = comments.length;
+  if(postId === currentOpenArticleId){
+    const articleCountEl = document.getElementById('articleCommentCount');
+    if(articleCountEl) articleCountEl.textContent = comments.length;
+  }
 
   if(!comments.length){
     list.innerHTML = `<div class="comment-empty">No comments yet — be the first.</div>`;
@@ -1834,9 +1859,10 @@ function deleteComment(postId, commentId){
 // Called when auth state changes while an article is open, so the
 // compose box and delete buttons reflect the new sign-in state right away.
 function refreshArticleAuthState(){
-  const articleScope = document.querySelector('#articleContent .comments-section');
-  if(articleScope) renderCommentComposeArea(currentOpenArticleId, articleScope);
-  if(activeFeedDrawer) renderCommentComposeArea(activeFeedDrawerPostId, activeFeedDrawer);
+  if(commentsOverlayEl){
+    const panel = commentsOverlayEl.querySelector('.comments-drawer-panel');
+    if(panel) renderCommentComposeArea(commentsOverlayPostId, panel);
+  }
 }
 
 </script>
@@ -1914,7 +1940,7 @@ function attachBigBoxHandlers(container){
     if(bubble) bubble.addEventListener('click', (e)=>{
       e.preventDefault();
       e.stopPropagation();
-      toggleFeedCommentsDrawer(box.dataset.id, box, bubble);
+      openArticleComments(box.dataset.id);
     });
   });
 }
@@ -1983,7 +2009,7 @@ function attachCardHandlers(container){
   container.querySelectorAll('.card-h').forEach(card=>{
     card.addEventListener('click', (e)=>{
       if(e.target.closest('.card-h-like')) return; // like button handles its own click
-      if(e.target.closest('.card-h-comment')) return; // comment bubble opens the inline drawer instead
+      if(e.target.closest('.card-h-comment')) return; // comment bubble opens the article + comments drawer
       e.preventDefault();
       openArticle(card.dataset.id);
     });
@@ -1991,60 +2017,64 @@ function attachCardHandlers(container){
     if(bubble) bubble.addEventListener('click', (e)=>{
       e.preventDefault();
       e.stopPropagation();
-      toggleFeedCommentsDrawer(card.dataset.id, card, bubble);
+      openArticleComments(card.dataset.id);
     });
   });
 }
 
-// ============ INLINE FEED COMMENTS DRAWER ============
-// Tapping the comment bubble on a feed/hero card expands a comments
-// panel right under that card, in normal page flow — it does NOT
-// navigate to the full article and does NOT jump the scroll position.
-// Cards further down the feed just shift down and stay visible/
-// reachable while the drawer is open. Only one drawer is open at a
-// time; opening another one, or tapping the same bubble again, closes
-// whichever is currently open.
-let activeFeedDrawer = null;
-let activeFeedDrawerPostId = null;
-let activeFeedDrawerBubble = null;
+// ============ ARTICLE COMMENTS DRAWER ============
+// Tapping a comment bubble opens the article like normal, then a white
+// drawer drops down from just under the topbar to hold the comment
+// list + compose box. The drawer is short on purpose — it does not
+// reach the very top of the screen and does not cover the whole
+// article — so the reader can still see the article behind/below it.
+// Closing the drawer (✕, tapping the backdrop, or posting a comment)
+// just removes the overlay; the article underneath was never touched.
+let commentsOverlayEl = null;
+let commentsOverlayPostId = null;
 
-function closeFeedCommentsDrawer(){
-  if(!activeFeedDrawer) return;
-  stopCommentsListener(activeFeedDrawer);
-  activeFeedDrawer.remove();
-  if(activeFeedDrawerBubble) activeFeedDrawerBubble.classList.remove('active');
-  activeFeedDrawer = null;
-  activeFeedDrawerPostId = null;
-  activeFeedDrawerBubble = null;
+function closeCommentsOverlay(){
+  if(!commentsOverlayEl) return;
+  const panel = commentsOverlayEl.querySelector('.comments-drawer-panel');
+  if(panel) stopCommentsListener(panel);
+  commentsOverlayEl.remove();
+  commentsOverlayEl = null;
+  commentsOverlayPostId = null;
 }
 
-function toggleFeedCommentsDrawer(postId, cardEl, bubbleEl){
-  if(activeFeedDrawer && activeFeedDrawerPostId === postId){
-    closeFeedCommentsDrawer();
-    return;
-  }
-  closeFeedCommentsDrawer();
+function openCommentsOverlay(postId){
+  if(commentsOverlayEl && commentsOverlayPostId === postId) return; // already open for this post
+  closeCommentsOverlay();
 
-  const drawer = document.createElement('div');
-  drawer.className = 'feed-comments-drawer';
-  drawer.innerHTML = `
-    <div class="comments-heading">
-      <div class="section-label">Comments</div>
-      <span class="count">(<span class="comment-count">0</span>)</span>
-      <button type="button" class="close-drawer" aria-label="Close comments">✕</button>
-    </div>
-    <div class="comment-compose-area"></div>
-    <div class="comment-list"></div>`;
-  cardEl.insertAdjacentElement('afterend', drawer);
-  drawer.querySelector('.close-drawer').addEventListener('click', closeFeedCommentsDrawer);
+  const overlay = document.createElement('div');
+  overlay.className = 'comments-overlay';
+  overlay.innerHTML = `
+    <div class="comments-drawer-panel">
+      <div class="comments-heading">
+        <div class="section-label">Comments</div>
+        <span class="count">(<span class="comment-count">0</span>)</span>
+        <button type="button" class="close-drawer" aria-label="Close comments">✕</button>
+      </div>
+      <div class="comment-compose-area"></div>
+      <div class="comment-list"></div>
+    </div>`;
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeCommentsOverlay(); });
+  overlay.querySelector('.close-drawer').addEventListener('click', closeCommentsOverlay);
+  document.body.appendChild(overlay);
 
-  activeFeedDrawer = drawer;
-  activeFeedDrawerPostId = postId;
-  activeFeedDrawerBubble = bubbleEl;
-  bubbleEl.classList.add('active');
+  commentsOverlayEl = overlay;
+  commentsOverlayPostId = postId;
 
-  renderCommentComposeArea(postId, drawer);
-  startCommentsListener(postId, drawer);
+  const panel = overlay.querySelector('.comments-drawer-panel');
+  renderCommentComposeArea(postId, panel);
+  startCommentsListener(postId, panel);
+}
+
+// Used by comment bubbles on feed/hero cards: open the full article,
+// then bring the comments drawer up over it in the same action.
+function openArticleComments(postId){
+  openArticle(postId);
+  openCommentsOverlay(postId);
 }
 
 function buildCarouselHtml(list){
@@ -2094,7 +2124,6 @@ function renderFeed(){
   const feed = document.getElementById('feed');
   const note = document.getElementById('filterNote');
   stopCarousel();
-  closeFeedCommentsDrawer();
   let list = posts.slice();
 
   if(state.category !== 'all'){
@@ -2340,13 +2369,16 @@ function openArticle(id){
   const bodyHtml = bodyToHtml(p.body);
   const isLiked = isPostLikedByViewer(p);
   const likeCount = p.likes || 0;
+  const commentCount = p.commentCount || 0;
   const related = relatedPostsFor(p);
 
   currentOpenArticleId = id;
   recordRead(p);
 
-  const prevArticleScope = document.querySelector('#articleContent .comments-section');
-  if(prevArticleScope) stopCommentsListener(prevArticleScope);
+  // Switching to a different article invalidates any open comments
+  // drawer (it belongs to whichever article's postId it was opened
+  // for) — close it rather than leave it floating over new content.
+  if(commentsOverlayEl && commentsOverlayPostId !== id) closeCommentsOverlay();
 
   document.getElementById('articleContent').innerHTML = `
     <div class="article-meta">
@@ -2364,19 +2396,14 @@ function openArticle(id){
         <span class="heart">${isLiked ? '♥' : '♡'}</span>
         <span id="likeCount">${likeCount}</span> ${likeCount===1?'Like':'Likes'}
       </button>
+      <button type="button" class="article-comments-btn" id="articleCommentsBtn">
+        <span class="bubble">💬</span><span id="articleCommentCount">${commentCount}</span> Comments
+      </button>
     </div>
     ${isAdmin() ? `
       <button class="publish-btn" id="editPostBtn" style="margin-top:24px;">Edit this post</button>
       <button class="cancel-btn" id="deletePostBtn" style="margin-top:24px;margin-left:10px;">Delete this post</button>
     ` : ''}
-    <div class="comments-section">
-      <div class="comments-heading">
-        <div class="section-label">Comments</div>
-        <span class="count">(<span class="comment-count">0</span>)</span>
-      </div>
-      <div class="comment-compose-area"></div>
-      <div class="comment-list"></div>
-    </div>
     ${related.length ? `
       <div class="related-section">
         <div class="section-label">Read Also</div>
@@ -2392,12 +2419,9 @@ function openArticle(id){
   if(delBtn) delBtn.addEventListener('click', ()=> deletePost(p.id));
   const likeBtn = document.getElementById('likeBtn');
   if(likeBtn) likeBtn.addEventListener('click', ()=> toggleLike(p));
+  document.getElementById('articleCommentsBtn').addEventListener('click', ()=> openCommentsOverlay(id));
   const relatedGrid = document.getElementById('relatedGrid');
   if(relatedGrid) attachRelatedCardHandlers(relatedGrid);
-
-  const articleCommentsScope = document.querySelector('#articleContent .comments-section');
-  renderCommentComposeArea(id, articleCommentsScope);
-  startCommentsListener(id, articleCommentsScope);
 
   stopReadStatusTimer();
   readStatusTimer = setInterval(()=> refreshReadStatusUI(id), 15000);
@@ -2908,7 +2932,7 @@ tabTrendingOnly.addEventListener('click', ()=>{ state.sort='trendingOnly'; activ
    VIEW SWITCHING
    ========================================================= */
 function hideAllViews(){
-  closeFeedCommentsDrawer();
+  closeCommentsOverlay();
   document.getElementById('feedView').hidden = true;
   document.getElementById('articleView').hidden = true;
   document.getElementById('writerView').hidden = true;
