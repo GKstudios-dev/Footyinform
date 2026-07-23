@@ -692,10 +692,10 @@ background-repeat:no-repeat;background-position:center;
 .back-btn:hover{border-color:var(--floodlight);color:var(--floodlight);}
 .article-hero{width:100%;height:260px;object-fit:cover;border-radius:var(--radius);margin-bottom:18px;}
 .article-meta{font-family:var(--mono);font-size:11px;color:var(--chalk-dim);margin-bottom:8px;display:flex;gap:10px;align-items:center;}
-.article h1{font-size:32px;line-height:1.1;margin:0 0 16px;text-transform:lowercase;color:var(--chalk);}
+.article h1{font-size:32px;line-height:1.1;margin:0 0 16px;color:var(--chalk);text-transform:none;}
 .article-body{font-size:19px;line-height:1.85;color:var(--chalk);}
 .article-body p{margin:0 0 18px;}
-.article-body h2{font-family:var(--display);font-size:20px;margin:26px 0 12px;color:var(--floodlight);text-transform:lowercase;}
+.article-body h2{font-family:var(--display);font-size:20px;margin:26px 0 12px;color:var(--chalk);text-transform:none;}
 .article-body img{max-width:100%;height:auto;border-radius:var(--radius);margin:14px 0;display:block;}
 .article-body a.inline-post-link{color:var(--floodlight);font-weight:700;text-decoration:underline;text-decoration-color:var(--floodlight-dim);text-underline-offset:2px;}
 .article-body a.inline-post-link:hover{text-decoration-color:var(--floodlight);}
@@ -986,11 +986,13 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
    far right. */
 .topbar .theme-toggle{order:99;}
 
-/* ============ LIGHT MODE: article title + article subtitle only ============
+/* ============ LIGHT MODE: article title + subtitle + in-body subheadings ============
    Everything else in light mode inherits black text from --chalk
-   above; only the article page's title and subtitle get dark green. */
+   above; only the article page's title, subtitle, and section
+   subheadings get dark green. */
 [data-theme="light"] .article h1,
-[data-theme="light"] .article-subtitle{
+[data-theme="light"] .article-subtitle,
+[data-theme="light"] .article-body h2{
   color:#0E2A1B;
 }
 [data-theme="light"] .article h1{
@@ -2821,7 +2823,7 @@ function openArticle(id){
     <div class="article-meta">
       <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
     </div>
-    <h1>${escapeHtml(p.title)}</h1>
+    <h1>${escapeHtml(sentenceCase(p.title))}</h1>
     ${p.subtitle ? `<p class="article-subtitle">${escapeHtml(sentenceCase(p.subtitle))}</p>` : ''}
     <img class="article-hero" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}">
     ${p.imageAlt ? `<div class="img-caption">${escapeHtml(p.imageAlt)}</div>` : ''}
@@ -2877,7 +2879,7 @@ function openArticle(id){
 function bodyToHtml(body){
   if(!body) return '';
   if(Array.isArray(body)){
-    const blocks = body.map(block=> block.startsWith('## ') ? `<h2>${escapeHtml(block.slice(3))}</h2>` : `<p>${escapeHtml(block)}</p>`);
+    const blocks = body.map(block=> block.startsWith('## ') ? `<h2>${escapeHtml(sentenceCase(block.slice(3)))}</h2>` : `<p>${escapeHtml(block)}</p>`);
     // A few paragraphs before the first ad, then reasonable spacing
     // between any further ones — never one right at the very end.
     let out = '';
