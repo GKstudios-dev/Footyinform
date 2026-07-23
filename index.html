@@ -60,6 +60,11 @@
   --chalk-dim:#1A1A1A;
   --line:rgba(0,0,0,.14);
   --chalk-line:rgba(0,0,0,.18);
+  /* Cards keep the app's off-white "chalk" tone in dark mode, where it
+     pops against the dark green page. On a plain white page that same
+     tone is almost invisible, so light mode gets its own slightly
+     deeper off-white so card edges stay visible without a hard border. */
+  --card-bg:#F7F7F5;
 }
 
 *{box-sizing:border-box;}
@@ -462,10 +467,10 @@ main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
   display:block;margin:0;color:var(--ink-dim);font-size:16px;line-height:1.4;
 }
 .read-badge{
-  font-family:var(--mono);font-size:9px;letter-spacing:.04em;color:#1F4F32;
+  font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:#1F4F32;font-weight:700;
   display:inline-flex;align-items:center;gap:4px;
 }
-.read-badge::before{content:'●';font-size:7px;color:var(--bad);}
+.read-badge::before{content:'●';font-size:8px;color:var(--bad);}
 
 /* Bottom row of a card: read-time on the left, like/comment pinned to the
    bottom-right corner — mirrors the app's category-label / like-button row.
@@ -677,6 +682,7 @@ background-repeat:no-repeat;background-position:center;
   font-family:var(--body);font-size:17px;line-height:1.5;color:var(--chalk-dim);
   margin:0 0 18px;font-weight:500;text-transform:lowercase;
 }
+.article-subtitle::first-letter{text-transform:uppercase;}
 .img-caption{
   font-family:var(--mono);font-size:11px;color:var(--chalk-dim);
   margin:-10px 0 18px;line-height:1.5;
