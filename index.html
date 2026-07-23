@@ -371,38 +371,50 @@ main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
 
 /* ============ ARTICLE COMMENTS DRAWER ============
    Tapping a comment bubble opens the article as normal, then this
-   drawer drops down from just below the topbar and covers only the
-   upper portion of the screen — short enough that the reader can
-   still see the article peeking in below it. A dimmed backdrop sits
-   behind it (tap it, or the ✕, to dismiss); the article itself is
-   never removed from the page, just partly covered while the drawer
-   is open. */
+   drawer slides up from the bottom of the screen and covers most of
+   it — a bottom sheet, matching the reference app. A dimmed backdrop
+   sits behind it (tap it to dismiss); the drag handle at the top can
+   be swiped down to close it too. The article itself is never removed
+   from the page, just covered while the drawer is open. */
 .comments-overlay{
   position:fixed;inset:0;z-index:200;
   background:rgba(0,0,0,.45);
-  display:flex;justify-content:center;
+  display:flex;justify-content:center;align-items:flex-end;
   animation:commentsOverlayFade .15s ease-out;
 }
 @keyframes commentsOverlayFade{from{opacity:0;}to{opacity:1;}}
 .comments-drawer-panel{
   width:100%;max-width:640px;
   background:var(--card-bg);color:var(--ink);
-  margin-top:62px; /* sits just under the sticky topbar, not the very top */
-  max-height:56vh;
-  border-radius:0 0 8px 8px;
-  box-shadow:0 16px 34px rgba(0,0,0,.45);
+  height:88vh;max-height:88vh;
+  border-radius:16px 16px 0 0;
+  box-shadow:0 -12px 34px rgba(0,0,0,.45);
   display:flex;flex-direction:column;overflow:hidden;
-  animation:commentsDrawerDown .2s ease-out;
+  animation:commentsDrawerUp .22s cubic-bezier(.22,1,.36,1);
+  transition:transform .25s cubic-bezier(.22,1,.36,1);
 }
-@keyframes commentsDrawerDown{from{transform:translateY(-20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-.comments-drawer-panel .comments-heading{display:flex;align-items:center;gap:8px;padding:16px 16px 0;}
-.comments-drawer-panel .comments-heading .section-label{margin:0;font-size:14px;}
+.comments-drawer-panel.dragging{animation:none;transition:none;}
+@keyframes commentsDrawerUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.drawer-handle-row{
+  display:flex;justify-content:center;flex:none;
+  padding:10px 0 4px;cursor:grab;touch-action:none;
+}
+.drawer-handle-row:active{cursor:grabbing;}
+.drawer-handle{width:36px;height:4px;border-radius:2px;background:var(--ink-dim);opacity:.35;}
+.comments-drawer-panel .comments-heading{
+  display:flex;align-items:center;gap:8px;padding:6px 16px 14px;
+  border-bottom:1px solid rgba(15,32,22,.08);flex:none;
+}
+.comments-drawer-panel .comments-heading .section-label{margin:0;font-size:18px;}
 .comments-drawer-panel .close-drawer{
   margin-left:auto;background:none;border:none;color:var(--ink-dim);
   font-family:var(--mono);font-size:17px;line-height:1;cursor:pointer;padding:4px 6px;
 }
-.comments-drawer-panel .comment-compose-area{padding:12px 16px 0;flex:none;}
-.comments-drawer-panel .comment-list{padding:12px 16px 16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px;}
+.comments-drawer-panel .comment-list{padding:14px 16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch;}
+.comments-drawer-panel .comment-compose-area{
+  padding:10px 16px calc(14px + env(safe-area-inset-bottom));
+  flex:none;border-top:1px solid rgba(15,32,22,.08);
+}
 
 /* Compact trigger inside the open article that (re)opens the drawer */
 .article-comments-btn{
@@ -412,6 +424,7 @@ main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
   margin-left:10px;
 }
 .article-comments-btn .bubble{font-size:13px;line-height:1;}
+
 
 /* ============ TRENDING CAROUSEL ============ */
 .section-label{
@@ -558,16 +571,27 @@ background-repeat:no-repeat;background-position:center;
 .comments-heading{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
 .comments-heading .section-label{margin:0;}
 .comments-heading .count{font-family:var(--mono);font-size:12px;color:var(--chalk-dim);}
-.comment-compose{margin-bottom:20px;}
-.comment-compose textarea{
-  width:100%;background:var(--pitch);border:1px solid var(--line);color:var(--chalk);
-  padding:10px 12px;font-family:var(--body);font-size:14px;border-radius:var(--radius);
-  min-height:70px;resize:vertical;
+.comment-compose{}
+.compose-pill{
+  display:flex;align-items:center;gap:8px;
+  border:1px solid rgba(15,32,22,.18);border-radius:999px;
+  padding:4px 4px 4px 16px;background:var(--card-bg);
 }
-.comment-compose .compose-foot{
-  display:flex;align-items:center;justify-content:space-between;margin-top:8px;
+.compose-pill:focus-within{border-color:var(--pitch-light);}
+.compose-pill .comment-input{
+  flex:1;border:none;outline:none;background:transparent;
+  font-family:var(--body);font-size:14.5px;color:var(--ink);padding:9px 0;
+  min-width:0;
 }
-.comment-compose .char-hint{font-family:var(--mono);font-size:10px;color:var(--chalk-dim);}
+.compose-pill .comment-input::placeholder{color:var(--ink-dim);}
+.compose-pill .comment-submit-btn{
+  flex:none;width:34px;height:34px;border-radius:50%;border:none;
+  background:var(--pitch-dark);color:var(--floodlight);
+  display:flex;align-items:center;justify-content:center;padding:0;
+  transition:opacity .15s;
+}
+.compose-pill .comment-submit-btn:disabled{opacity:.4;cursor:default;}
+.compose-pill .comment-submit-btn svg{width:15px;height:15px;transform:translateX(-1px);}
 .comment-signin-hint{
   padding:14px;border:1px dashed var(--line);border-radius:var(--radius);
   font-family:var(--body);font-size:13.5px;color:var(--chalk-dim);
@@ -589,7 +613,10 @@ background-repeat:no-repeat;background-position:center;
   text-decoration:underline;padding:0;
 }
 .comment-item .comment-del:hover{color:var(--bad);}
-.comment-empty{font-family:var(--mono);font-size:12px;color:var(--chalk-dim);padding:10px 0;}
+.comment-empty{
+  font-family:var(--body);font-size:14.5px;color:var(--ink-dim);
+  flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 20px;
+}
 
 /* ============ READER AUTH MODAL ============ */
 .auth-modal{
@@ -1798,15 +1825,16 @@ function renderCommentComposeArea(postId, scopeEl){
   }
   box.innerHTML = `
     <div class="comment-compose">
-      <textarea class="comment-input" maxlength="1000" placeholder="Share your thoughts..."></textarea>
-      <div class="compose-foot">
-        <span class="char-hint comment-char-hint">0 / 1000</span>
-        <button class="publish-btn comment-submit-btn" style="padding:8px 16px;font-size:13px;">Post comment</button>
+      <div class="compose-pill">
+        <input type="text" class="comment-input" maxlength="1000" placeholder="Add a comment...">
+        <button type="button" class="comment-submit-btn" aria-label="Post comment">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg>
+        </button>
       </div>
     </div>`;
   const input = box.querySelector('.comment-input');
-  input.addEventListener('input', ()=>{
-    box.querySelector('.comment-char-hint').textContent = `${input.value.length} / 1000`;
+  input.addEventListener('keydown', (e)=>{
+    if(e.key==='Enter'){ e.preventDefault(); submitComment(postId, scopeEl); }
   });
   box.querySelector('.comment-submit-btn').addEventListener('click', ()=> submitComment(postId, scopeEl));
 }
@@ -1832,20 +1860,18 @@ function submitComment(postId, scopeEl){
   });
 
   const submitBtn = scopeEl.querySelector('.comment-submit-btn');
-  if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Posting…'; }
+  if(submitBtn) submitBtn.disabled = true;
 
   batch.commit()
     .then(()=>{
       input.value = '';
-      const hint = scopeEl.querySelector('.comment-char-hint');
-      if(hint) hint.textContent = '0 / 1000';
     })
     .catch(err=>{
       console.warn('Could not post comment:', err);
       alert('Could not post your comment — try again.');
     })
     .finally(()=>{
-      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = 'Post comment'; }
+      if(submitBtn) submitBtn.disabled = false;
     });
 }
 
@@ -2024,12 +2050,11 @@ function attachCardHandlers(container){
 
 // ============ ARTICLE COMMENTS DRAWER ============
 // Tapping a comment bubble opens the article like normal, then a white
-// drawer drops down from just under the topbar to hold the comment
-// list + compose box. The drawer is short on purpose — it does not
-// reach the very top of the screen and does not cover the whole
-// article — so the reader can still see the article behind/below it.
-// Closing the drawer (✕, tapping the backdrop, or posting a comment)
-// just removes the overlay; the article underneath was never touched.
+// drawer slides up from the bottom of the screen as a bottom sheet,
+// covering most of it, matching the reference app. It can be closed
+// by tapping the backdrop, the ✕, or by dragging the handle down.
+// Closing the drawer just removes the overlay; the article underneath
+// was never touched.
 let commentsOverlayEl = null;
 let commentsOverlayPostId = null;
 
@@ -2050,13 +2075,14 @@ function openCommentsOverlay(postId){
   overlay.className = 'comments-overlay';
   overlay.innerHTML = `
     <div class="comments-drawer-panel">
+      <div class="drawer-handle-row" id="drawerHandle"><div class="drawer-handle"></div></div>
       <div class="comments-heading">
         <div class="section-label">Comments</div>
         <span class="count">(<span class="comment-count">0</span>)</span>
         <button type="button" class="close-drawer" aria-label="Close comments">✕</button>
       </div>
-      <div class="comment-compose-area"></div>
       <div class="comment-list"></div>
+      <div class="comment-compose-area"></div>
     </div>`;
   overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeCommentsOverlay(); });
   overlay.querySelector('.close-drawer').addEventListener('click', closeCommentsOverlay);
@@ -2066,15 +2092,53 @@ function openCommentsOverlay(postId){
   commentsOverlayPostId = postId;
 
   const panel = overlay.querySelector('.comments-drawer-panel');
+  attachDrawerDragToDismiss(panel, overlay.querySelector('#drawerHandle'));
   renderCommentComposeArea(postId, panel);
   startCommentsListener(postId, panel);
 }
 
+// Lets the reader drag the handle down to dismiss the drawer, like a
+// native bottom sheet. Dragging past ~28% of the panel's height closes
+// it; letting go before that springs it back open.
+function attachDrawerDragToDismiss(panel, handle){
+  let startY = 0, currentY = 0, dragging = false;
+  function onPointerDown(e){
+    dragging = true;
+    startY = e.clientY;
+    currentY = 0;
+    panel.classList.add('dragging');
+    if(handle.setPointerCapture) handle.setPointerCapture(e.pointerId);
+  }
+  function onPointerMove(e){
+    if(!dragging) return;
+    currentY = Math.max(0, e.clientY - startY);
+    panel.style.transform = `translateY(${currentY}px)`;
+  }
+  function onPointerUp(){
+    if(!dragging) return;
+    dragging = false;
+    panel.classList.remove('dragging');
+    const threshold = panel.getBoundingClientRect().height * 0.28;
+    if(currentY > threshold){
+      closeCommentsOverlay();
+    } else {
+      panel.style.transform = '';
+    }
+  }
+  handle.addEventListener('pointerdown', onPointerDown);
+  handle.addEventListener('pointermove', onPointerMove);
+  handle.addEventListener('pointerup', onPointerUp);
+  handle.addEventListener('pointercancel', onPointerUp);
+}
+
 // Used by comment bubbles on feed/hero cards: open the full article,
 // then bring the comments drawer up over it in the same action.
+// Guarded on openArticle's return value — if the post wasn't found
+// (e.g. the live feed hadn't finished syncing yet), the article never
+// opened, so the drawer must not open either; otherwise it would end
+// up floating over the feed instead of over the article underneath it.
 function openArticleComments(postId){
-  openArticle(postId);
-  openCommentsOverlay(postId);
+  if(openArticle(postId)) openCommentsOverlay(postId);
 }
 
 function buildCarouselHtml(list){
@@ -2133,9 +2197,22 @@ function renderFeed(){
     document.getElementById('clearFilter').addEventListener('click', ()=>{
       setCategory('all');
     });
-  } else {
-    note.hidden = true;
+
+    // Category view: every post in the category as a flat list of
+    // horizontal cards (140x90 image on the left, title beside it,
+    // snippet wrapping underneath to the full card width) — the same
+    // card style the Trending tab used to use — regardless of which
+    // tab (Home/Trending) happens to be active. Newest first.
+    list.sort((a,b)=> toJSDate(b.date)-toJSDate(a.date));
+    if(!list.length){
+      feed.innerHTML = `<div class="empty-state">${feedEmptyMessage('No articles in this category yet.')}</div>`;
+      return;
+    }
+    feed.innerHTML = list.map(p=>cardHtml(p)).join('');
+    attachCardHandlers(feed);
+    return;
   }
+  note.hidden = true;
 
   if(state.sort === 'home'){
     const trendList = posts.filter(p=>p.trending).sort((a,b)=> toJSDate(b.date)-toJSDate(a.date));
@@ -2232,7 +2309,8 @@ function renderFeed(){
   }
 
   // state.sort === 'trendingOnly' — only posts marked "trending" in the
-  // dashboard, no carousel, newest first. Mirrors the app's Trending tab.
+  // dashboard, shown as big cards only (one after another), newest
+  // first. Mirrors the app's Trending tab.
   list = list.filter(p=>p.trending);
   list.sort((a,b)=> toJSDate(b.date)-toJSDate(a.date));
 
@@ -2241,8 +2319,8 @@ function renderFeed(){
     return;
   }
 
-  feed.innerHTML = list.map(p=>cardHtml(p)).join('');
-  attachCardHandlers(feed);
+  feed.innerHTML = list.map(p=>bigBoxHtml(p)).join('');
+  attachBigBoxHandlers(feed);
 }
 
 /* =========================================================
@@ -2365,7 +2443,7 @@ function attachRelatedCardHandlers(container){
 
 function openArticle(id){
   const p = posts.find(x=>x.id===id);
-  if(!p) return;
+  if(!p) return false;
   const bodyHtml = bodyToHtml(p.body);
   const isLiked = isPostLikedByViewer(p);
   const likeCount = p.likes || 0;
@@ -2406,7 +2484,7 @@ function openArticle(id){
     ` : ''}
     ${related.length ? `
       <div class="related-section">
-        <div class="section-label">Read Also</div>
+        <div class="section-label">You May Also Like</div>
         <div class="related-grid" id="relatedGrid">
           ${related.map(relatedCardHtml).join('')}
         </div>
@@ -2431,6 +2509,7 @@ function openArticle(id){
   renderFeed();
 
   showArticle();
+  return true;
 }
 
 // Body can be either a legacy array (## heading / paragraph strings from
