@@ -36,8 +36,7 @@
   --line:rgba(244,242,233,0.12);
   --chalk-line:rgba(244,242,233,0.24); /* visible pitch-marking divider between stacked cards */
   --card-bg:#F4F2E9;
-  --card-gray:#2B2E2C;       /* dark gray card background — snippet cards in dark mode */
-  --card-h-bg:var(--card-gray);
+  --card-h-bg:var(--pitch-dark);   /* horizontal snippet cards — dark green, matches the page */
   --card-h-text:var(--chalk);
   --card-h-text-dim:var(--chalk-dim);
   --card-h-border:var(--line);
@@ -693,19 +692,18 @@ background-repeat:no-repeat;background-position:center;
 .back-btn:hover{border-color:var(--floodlight);color:var(--floodlight);}
 .article-hero{width:100%;height:260px;object-fit:cover;border-radius:var(--radius);margin-bottom:18px;}
 .article-meta{font-family:var(--mono);font-size:11px;color:var(--chalk-dim);margin-bottom:8px;display:flex;gap:10px;align-items:center;}
-.article h1{font-size:32px;line-height:1.1;margin:0 0 16px;text-transform:lowercase;}
+.article h1{font-size:32px;line-height:1.1;margin:0 0 16px;text-transform:lowercase;color:var(--chalk);}
 .article-body{font-size:19px;line-height:1.85;color:var(--chalk);}
 .article-body p{margin:0 0 18px;}
 .article-body h2{font-family:var(--display);font-size:20px;margin:26px 0 12px;color:var(--floodlight);text-transform:lowercase;}
 .article-body img{max-width:100%;height:auto;border-radius:var(--radius);margin:14px 0;display:block;}
-.article-body a.inline-post-link{color:var(--floodlight);text-decoration:underline;text-decoration-color:var(--floodlight-dim);text-underline-offset:2px;}
+.article-body a.inline-post-link{color:var(--floodlight);font-weight:700;text-decoration:underline;text-decoration-color:var(--floodlight-dim);text-underline-offset:2px;}
 .article-body a.inline-post-link:hover{text-decoration-color:var(--floodlight);}
 
 .article-subtitle{
-  font-family:var(--body);font-size:17px;line-height:1.5;color:var(--chalk-dim);
-  margin:0 0 18px;font-weight:500;text-transform:lowercase;
+  font-family:var(--body);font-size:17px;line-height:1.5;color:var(--chalk);
+  margin:0 0 18px;font-weight:500;
 }
-.article-subtitle::first-letter{text-transform:uppercase;}
 .img-caption{
   font-family:var(--mono);font-size:11px;color:var(--chalk-dim);
   margin:-10px 0 18px;line-height:1.5;
@@ -1200,9 +1198,9 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
         </div>
       </div>
 
-      <!-- Desktop-only right rail: trending + latest stories, filled in
-           by renderDesktopRail() every time the feed re-renders. -->
-      <aside class="feed-rail-right" id="desktopRailRight" aria-label="Trending and latest stories"></aside>
+      <!-- Desktop-only right rail: trending + latest stories + football now,
+           filled in by renderDesktopRail() every time the feed re-renders. -->
+      <aside class="feed-rail-right" id="desktopRailRight" aria-label="Trending, latest, and football now stories"></aside>
 
     </div>
   </section>
@@ -1635,6 +1633,14 @@ function timeAgo(iso){
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+// Article subtitle: lowercase throughout, but the very first letter of the
+// sentence is capitalized — done in JS rather than CSS text-transform +
+// ::first-letter, since that combo doesn't render reliably in every browser.
+function sentenceCase(str){
+  const lower = String(str).toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
 </script>
@@ -2455,8 +2461,8 @@ function feedEmptyMessage(fallback){
 }
 
 // Fills the desktop-only right rail (BBC-style "Trending Now" / "Latest
-// Stories" column). No-op on mobile/tablet since the rail is hidden
-// there anyway, but it's cheap enough to just always keep it in sync.
+// Stories" / "Football Now" column). No-op on mobile/tablet since the rail
+// is hidden there anyway, but it's cheap enough to just always keep it in sync.
 function renderDesktopRail(){
   const railEl = document.getElementById('desktopRailRight');
   if(!railEl) return;
@@ -2465,6 +2471,8 @@ function renderDesktopRail(){
     .sort((a,b)=> toJSDate(b.date)-toJSDate(a.date)).slice(0,5);
   const latest = posts.slice()
     .sort((a,b)=> toJSDate(b.date)-toJSDate(a.date)).slice(0,6);
+  const footballNow = posts.filter(p=>p.footballNow)
+    .sort((a,b)=> toJSDate(b.date)-toJSDate(a.date)).slice(0,5);
 
   const trendHtml = trending.length ? trending.map(p=>`
     <a href="#" class="rail-item" data-id="${p.id}">
@@ -2477,6 +2485,12 @@ function renderDesktopRail(){
       <span class="rail-item-title">${escapeHtml(p.title)}</span>
     </a>`).join('') : `<div class="rail-empty">No stories yet.</div>`;
 
+  const footballNowHtml = footballNow.length ? footballNow.map(p=>`
+    <a href="#" class="rail-item" data-id="${p.id}">
+      <img class="rail-item-img" src="${p.image||''}" alt="">
+      <span class="rail-item-title">${escapeHtml(p.title)}</span>
+    </a>`).join('') : `<div class="rail-empty">No breaking news right now.</div>`;
+
   railEl.innerHTML = `
     <div class="rail-block">
       <div class="section-label">Trending Now</div>
@@ -2485,6 +2499,10 @@ function renderDesktopRail(){
     <div class="rail-block">
       <div class="section-label">Latest Stories</div>
       ${latestHtml}
+    </div>
+    <div class="rail-block">
+      <div class="section-label">Football Now</div>
+      ${footballNowHtml}
     </div>`;
 
   railEl.querySelectorAll('.rail-item').forEach(el=>{
@@ -2804,7 +2822,7 @@ function openArticle(id){
       <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
     </div>
     <h1>${escapeHtml(p.title)}</h1>
-    ${p.subtitle ? `<p class="article-subtitle">${escapeHtml(p.subtitle)}</p>` : ''}
+    ${p.subtitle ? `<p class="article-subtitle">${escapeHtml(sentenceCase(p.subtitle))}</p>` : ''}
     <img class="article-hero" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}">
     ${p.imageAlt ? `<div class="img-caption">${escapeHtml(p.imageAlt)}</div>` : ''}
     <div class="byline">By <b>${escapeHtml(p.author || 'The Football Post Staff')}</b> &middot; ${fmtDate(p.date)}</div>
